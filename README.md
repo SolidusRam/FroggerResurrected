@@ -10,20 +10,4 @@ I coccodrilli(tronchi) che si muovono in orizzontale, minimo 8 corsie
 I proiettili, in questa versione i coccodrilli sparano proiettili, la rana ha dei proiettili a disposizione per distruggerli
 Il gestore delle stampe e del tempo
 
-FroggerResurrected/
-├── src/
-│   ├── main.c          # Punto di ingresso del programma
-│   ├── game.c          # Logica generale del gioco
-│   ├── player.c        # Gestione della rana (giocatore)
-│   ├── crocodile.c     # Gestione dei coccodrilli
-│   ├── projectiles.c   # Gestione dei proiettili
-│   └── utils.c         # Funzioni di utilità
-├── include/
-│   ├── game.h          # Dichiarazioni delle funzioni e strutture del gioco
-│   ├── player.h        # Dichiarazioni delle funzioni e strutture del giocatore
-│   ├── crocodile.h     # Dichiarazioni delle funzioni e strutture dei coccodrilli
-│   ├── projectiles.h   # Dichiarazioni delle funzioni e strutture dei proiettili
-│   └── utils.h         # Dichiarazioni delle funzioni di utilità
-├── assets/             # Eventuali risorse grafiche o audio
-├── Makefile            # File per automatizzare la compilazione
-└── README.md           # Documentazione del progetto
+FroggerResurrected/ ├── src/ │ ├── main.c # Punto di ingresso del programma │ ├── game.c # Logica generale del gioco │ ├── player.c # Gestione della rana (giocatore) │ ├── crocodile.c # Gestione dei coccodrilli │ ├── projectiles.c # Gestione dei proiettili │ └── utils.c # Funzioni di utilità ├── include/ │ ├── game.h # Dichiarazioni delle funzioni e strutture del gioco │ ├── player.h # Dichiarazioni delle funzioni e strutture del giocatore │ ├── crocodile.h # Dichiarazioni delle funzioni e strutture dei coccodrilli │ ├── projectiles.h # Dichiarazioni delle funzioni e strutture dei proiettili │ └── utils.h # Dichiarazioni delle funzioni di utilità ├── assets/ # Eventuali risorse grafiche o audio ├── Makefile # File per automatizzare la compilazione └── README.md # Documentazione del progetto
