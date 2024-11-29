@@ -19,6 +19,8 @@ int main(){
     //inizializzo schermo
     initscr();noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
 
+    box(stdscr, ACS_VLINE, ACS_HLINE);
+    refresh();
     //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
     if (pipe(pipefd) == -1){
         perror("Errore nella creazione della pipe!\n");
@@ -28,17 +30,18 @@ int main(){
     pid_rana = fork();
 
     if (pid_rana == -1){
-        perror("Errore nell\'esecuzione della fork!\n");
-        exit(1);
-    }else if (pid_rana == 0){
-        close(pipefd[0]);  //chiudo il descrittore di lettura
-        rana(pipefd[1]);  //invoco la funzione rana
+        perror("Errore nella creazione del processo figlio!\n");
+        _exit(1);
+    }else if(pid_rana == 0){
+        close(pipefd[0]);
+        rana(pipefd[1]);
     }
 
-    //avvio funzione controllo
-    close(pipefd[1]);  //chiudo il descrittore di scrittura
+    close(pipefd[1]);
     game(pipefd[0]);
     kill(pid_rana, SIGTERM);
-    return 0;
+        
 
+    endwin();
+    return 0;
 }

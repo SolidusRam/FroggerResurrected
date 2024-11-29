@@ -7,7 +7,6 @@
 #include <errno.h>
 #include <string.h>
 
-extern char sprite_rana[3][4];
 
 struct position
 {

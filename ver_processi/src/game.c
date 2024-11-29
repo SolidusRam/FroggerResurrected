@@ -1,9 +1,10 @@
 #include "../include/game.h"
 
-char sprite_rana[3][4] = {
-    {'#', '#', '#', '#'},
-    {'#', ' ', ' ', '#'},
-    {'#', '#', '#', '#'} 
+char rana_sprite[4][3] = {
+    {' ', 'O', ' '},
+    {'O', 'O', 'O'},
+    {' ', 'O', ' '},
+    {'O', ' ', 'O'}
 };
 
 void game(int pipein)
@@ -11,11 +12,13 @@ void game(int pipein)
     struct position p;
 
     //la rana inizia dal centro dello schermo
-    struct position rana = {'$', COLS/2, LINES/2, 4, 3};
+    struct position rana_pos = {'$', COLS/2, LINES/2, 3, 4};
 
     while (1)
     {
         ssize_t r = read(pipein, &p, sizeof(struct position));
+        mvprintw(0, 0, "Read: char=%c, x=%d, y=%d", p.c, p.x, p.y);
+        refresh();
         if (r <= 0) {
             mvprintw(LINES/2, COLS/2-10, "Pipe read error: %s", strerror(errno));
             refresh();
@@ -23,24 +26,31 @@ void game(int pipein)
             continue;
         }
 
-        for(int i = 0; i < 3; i++)
+
+        //cancello la rana
+
+        for(int i = 0; i < rana_pos.height; i++)
         {
-            for(int z = 0; z < 4; z++)
+            for(int z = 0; z < rana_pos.width; z++)
             {
-                mvaddch(rana.y + i, rana.x + z, ' ');
+                mvaddch(rana_pos.y + i, rana_pos.x + z, ' ');
             }
         }
 
+        //aggiorno la posizione in base al carattere letto
         if (p.c == '$') {
-            rana = p;
+            rana_pos = p;
         }
 
-        for (int i = 0; i < rana.height; i++)
+        //stampo la rana
+        for (int i = 0; i < rana_pos.height; i++)
         {
-            for (int j = 0; j < rana.width; j++)
+            for (int j = 0; j < rana_pos.width; j++)
             {
-                // Codice mancante
+                mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
             }
         }
+
+        refresh();
     }
 }

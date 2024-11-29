@@ -1,7 +1,2 @@
-/build/crocodile.o
-build/crocodile.o
-build/game.o
-build/main.o
-build/player.o
-build/projectile.o
-build/utils.o
+ver_processi/build/
+ver_processi/frogger
