@@ -8,6 +8,8 @@
 #include "../include/player.h"
 
 
+
+
 int main(){
 
     //creo la pipe
@@ -17,7 +19,14 @@ int main(){
     int pid_rana;
 
     //inizializzo schermo
-    initscr();noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
+    initscr();
+    if (LINES < GAME_HEIGHT || COLS < GAME_WIDTH) {
+        endwin();
+        fprintf(stderr, "Terminal too small. Needs at least %dx%d\n", GAME_WIDTH, GAME_HEIGHT);
+        exit(1);
+    }
+    resize_term(GAME_HEIGHT, GAME_WIDTH);
+    noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
 
     box(stdscr, ACS_VLINE, ACS_HLINE);
     refresh();

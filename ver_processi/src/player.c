@@ -12,11 +12,11 @@ void rana(int pipeout)
 {
     struct position p;
     p.c = '$';
-    //centro dello schermo
-    p.x = COLS/2;
-    p.y = LINES/2;
-    p.width = 3;
-    p.height = 4;
+
+    p.x = GAME_WIDTH/2;
+    p.y = GAME_HEIGHT-2;
+    p.width = 5;
+    p.height = 2;
 
     while (1)
     {

@@ -1,10 +1,14 @@
 #include "../include/game.h"
 
-char rana_sprite[4][3] = {
-    {' ', 'O', ' '},
-    {'O', 'O', 'O'},
-    {' ', 'O', ' '},
-    {'O', ' ', 'O'}
+/*
+  o
+_`O'_
+*/
+
+char rana_sprite[2][5] = {
+    {' ', ' ', 'o', ' ', ' '},
+    {'_', '`', 'O', '\'', '_'}
+    
 };
 
 void game(int pipein)
@@ -12,7 +16,7 @@ void game(int pipein)
     struct position p;
 
     //la rana inizia dal centro dello schermo
-    struct position rana_pos = {'$', COLS/2, LINES/2, 3, 4};
+    struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
 
     while (1)
     {
