@@ -1,14 +1,18 @@
 #include "../include/game.h"
 
+char sprite_rana[3][4] = {
+    {'#', '#', '#', '#'},
+    {'#', ' ', ' ', '#'},
+    {'#', '#', '#', '#'} 
+};
 
 void game(int pipein)
 {
     struct position p;
 
     //la rana inizia dal centro dello schermo
-    struct position rana = {'$', COLS/2, LINES/2};
+    struct position rana = {'$', COLS/2, LINES/2, 4, 3};
 
-    
     while (1)
     {
         ssize_t r = read(pipein, &p, sizeof(struct position));
@@ -18,31 +22,25 @@ void game(int pipein)
             sleep(1);
             continue;
         }
-        mvaddch(rana.y, rana.x, ' ');
+
+        for(int i = 0; i < 3; i++)
+        {
+            for(int z = 0; z < 4; z++)
+            {
+                mvaddch(rana.y + i, rana.x + z, ' ');
+            }
+        }
 
         if (p.c == '$') {
             rana = p;
         }
 
-        /*stampo la ranachar rana[3][4]={
-        {'#', '#', '#', '#'},
-        {'#', ' ', ' ', '#'},
-        {'#', '#', '#', '#'}
-    };*/
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < rana.height; i++)
         {
-            for (int z = 0; i < 4; i++)
+            for (int j = 0; j < rana.width; j++)
             {
-                mvaddch(sprite_rana[i][z], rana.y + i, rana.x + z);
+                // Codice mancante
             }
-            
         }
-        
-
-        refresh();
-
-        //eventuale controllo di collisione
-
     }
-    
 }
