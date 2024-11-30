@@ -25,16 +25,16 @@ void rana(int pipeout)
         switch (ch)
         {
         case KEY_UP:
-            if(p.y > 1) p.y--;
+            if(p.y > 1) p.y-=p.height;
             break;
         case KEY_DOWN:
-            if(p.y < LINES-2-p.height+1) p.y++;
+            if(p.y < LINES-2-p.height+1) p.y+=p.height;
             break;
         case KEY_LEFT:
-            if(p.x > 1) p.x--;
+            if(p.x > 1) p.x-=p.width;
             break;
         case KEY_RIGHT:
-            if(p.x < COLS-2-p.width+1) p.x++;
+            if(p.x < COLS-2-p.width+1) p.x+=p.width;
             break;
         }
 

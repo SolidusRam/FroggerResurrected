@@ -16,7 +16,7 @@
 
 struct position
 {
-    char c; // $ per la rana, 
+    char c; // $ per la rana, C per il coccodrillo
     int x;
     int y;
     int width;

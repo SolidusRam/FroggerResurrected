@@ -17,6 +17,7 @@ int main(){
     int pipefd[2];  //il campo 0 è per la lettura, il campo 1 è per la scrittura
 
     int pid_rana;
+    int pid_coccodrillo;
 
     //inizializzo schermo
     initscr();
@@ -29,7 +30,21 @@ int main(){
     noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
 
     box(stdscr, ACS_VLINE, ACS_HLINE);
+
+    //pavimento da ristrutturare
+    for (int i = 0; i < ACS_VLINE; i++)
+    {
+        //disegno il pavimento parte inferiore
+        mvaddch(FLOOR_HEIGHT, i, ACS_HLINE);
+
+        //disegno il pavimento parte superiore
+        mvaddch(3, i, ACS_HLINE);
+    }
+
+    
     refresh();
+
+    //creazione dei processi e pipe
     //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
     if (pipe(pipefd) == -1){
         perror("Errore nella creazione della pipe!\n");
@@ -44,6 +59,16 @@ int main(){
     }else if(pid_rana == 0){
         close(pipefd[0]);
         rana(pipefd[1]);
+    }
+
+    pid_coccodrillo = fork();
+
+    if (pid_coccodrillo == -1){
+        perror("Errore nella creazione del processo figlio!\n");
+        _exit(1);
+    }else if(pid_coccodrillo == 0){
+        close(pipefd[0]);
+        coccodrillo(pipefd[1]);
     }
 
     close(pipefd[1]);
