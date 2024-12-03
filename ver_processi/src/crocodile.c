@@ -32,33 +32,36 @@ void coccodrillo(int pipeout,int id){
 
     while (1)
     {
-        //controllo se bordo
-        if (p.x <= 1) {
-            p.x = 2;
-            p.width = p.width -1;
-            if(p.width <= 0){
-                p.width = original_width;
-                p.x = GAME_WIDTH-2;
-            }
-            
-        } else if (p.x >= GAME_WIDTH-3) {
-            p.x = GAME_WIDTH-3;
-            p.width = p.width -1;
-            if (p.width <= 0)
-            {
-                p.width = original_width;
-                p.x = 1;
-            }
-            
-        }
-        //movimento
-        p.x += direction;
+        handle_border_collision(&p, &original_width);
+        update_position(&p, direction);
 
         //scrivo la posizione nella pipe
         write(pipeout, &p, sizeof(struct position));
 
-        usleep(100000);
+        usleep(200000);
     }
     
 
+}
+
+ void handle_border_collision(struct position *p, int *original_width) {
+    if (p->x <= 1) {
+        p->x = 2;
+        p->width = p->width - 1;
+        if(p->width <= 0) {
+            p->width = *original_width;
+            p->x = GAME_WIDTH-2;
+        }
+    } else if (p->x >= GAME_WIDTH-3) {
+        p->x = GAME_WIDTH-3;
+        p->width = p->width - 1;
+        if (p->width <= 0) {
+            p->width = *original_width;
+            p->x = 1;
+        }
+    }
+}
+
+ void update_position(struct position *p, int direction) {
+    p->x += direction;
 }

@@ -6,6 +6,7 @@
 #include <ncurses.h>    
 #include <errno.h>
 #include <string.h>
+#include <stdbool.h>
 
 #define GAME_WIDTH 80    // Standard terminal width
 #define GAME_HEIGHT 24   // Standard terminal height
@@ -27,4 +28,5 @@ struct position
 
 void game(int,int);
 
+bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction);
 #endif // GAME_H

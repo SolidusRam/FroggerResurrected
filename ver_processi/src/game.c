@@ -74,11 +74,25 @@ void game(int pipein,int num_coccodrilli)
 
             
         //aggiorno la posizione in base al carattere letto
-        if(p.c == '$'){
-            rana_pos = p;
-        }else if (p.c == 'C'){
-            for(int i = 0; i<num_coccodrilli; i++){
-                if (crocodile_positions[i].id == p.id){
+        if (p.c == '$') {
+            int crocodile_direction = 0;
+            bool was_on_crocodile = rana_coccodrillo(&rana_pos, crocodile_positions, num_coccodrilli, &crocodile_direction);
+            if (was_on_crocodile) {
+              // Aggiorna la posizione della rana in base all'input del giocatore
+                rana_pos = p;
+                // Aggiungi anche il movimento del coccodrillo
+                rana_pos.x += crocodile_direction;
+                
+                // Controlla che la rana non esca dallo schermo
+                if (rana_pos.x < 1) rana_pos.x = 1;
+                if (rana_pos.x > GAME_WIDTH - rana_pos.width - 1) 
+                    rana_pos.x = GAME_WIDTH - rana_pos.width - 1;
+            } else {
+                rana_pos = p; // Only update position if not on crocodile
+            }
+        } else if (p.c == 'C') {
+            for (int i = 0; i < num_coccodrilli; i++) {
+                if (crocodile_positions[i].id == p.id) {
                     crocodile_positions[i] = p;
                     break;
                 }
@@ -86,17 +100,7 @@ void game(int pipein,int num_coccodrilli)
         }
 
 
-        //disegno la rana
-
-        attron(COLOR_PAIR(1));
-        for (int i = 0; i < rana_pos.height; i++)
-        {
-            for (int j = 0; j < rana_pos.width; j++)
-            {
-                mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
-            }
-        }
-        attroff(COLOR_PAIR(1));
+        
 
         //disegno i coccodrilli
         attron(COLOR_PAIR(2));
@@ -109,7 +113,32 @@ void game(int pipein,int num_coccodrilli)
         }
         attroff(COLOR_PAIR(2));
 
+        //disegno la rana
 
+        attron(COLOR_PAIR(1));
+        for (int i = 0; i < rana_pos.height; i++)
+        {
+            for (int j = 0; j < rana_pos.width; j++)
+            {
+                mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
+            }
+        }
+        attroff(COLOR_PAIR(1));
         refresh();
     }
+}
+
+bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction) {
+    for (int i = 0; i < num_coccodrilli; i++) {
+        // Check if frog is on crocodile
+        if (rana_pos->y == crocodile_positions[i].y && 
+            rana_pos->x >= crocodile_positions[i].x && 
+            rana_pos->x <= crocodile_positions[i].x + crocodile_positions[i].width - rana_pos->width) {
+            
+            // Set the direction based on the crocodile's ID
+            *direction = (i % 2 == 0) ? -1 : 1;
+            return true; // Frog is on crocodile
+        }
+    }
+    return false; // Frog is not on any crocodile
 }

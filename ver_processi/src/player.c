@@ -45,6 +45,6 @@ void rana(int pipeout)
         write(pipeout, &p, sizeof(struct position));
 
         //controllo la velocità di movimento
-        usleep(50000);
+        usleep(200000);
     }
 }
