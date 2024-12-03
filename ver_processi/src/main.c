@@ -21,8 +21,14 @@ int main(){
     int pid_coccodrilli[MAX_CROCODILES];
     int num_coccodrilli = 8;
 
+    srand(time(NULL));
     //inizializzo schermo
     initscr();
+
+    start_color();
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);//colore rana
+    init_pair(2, COLOR_RED, COLOR_BLACK);//colore coccodrillo
+
     if (LINES < GAME_HEIGHT || COLS < GAME_WIDTH) {
         endwin();
         fprintf(stderr, "Terminal too small. Needs at least %dx%d\n", GAME_WIDTH, GAME_HEIGHT);

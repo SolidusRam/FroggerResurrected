@@ -15,7 +15,7 @@ char rana_sprite[2][5] = {
 void game(int pipein,int num_coccodrilli)
 {
     struct position p;
-    
+    srand(time(NULL));
 
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
@@ -24,19 +24,21 @@ void game(int pipein,int num_coccodrilli)
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
-        int lane = i % LANES;  // Distribute across 8 lanes (0-7)
-        int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
-        int y = 4 + (lane * LANE_HEIGHT);  // Starting from y=4 with 2 units between lanes
-        
-        crocodile_positions[i] = (struct position) {
-            .c = 'C',
-            .x = x,
-            .y = y,
-            .width = 1,
-            .height = 1,
-            .id = i
-        };
-    }
+    int lane = i % LANES;  // Distribute across 8 lanes (0-7)
+    int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
+    
+    // Random width between 3-4 times the frog width (frog width = 5)
+    int width = (rand() % 2 + 3) * 5;  // Will give either 15 or 20 units
+    
+    crocodile_positions[i] = (struct position) {
+        .c = 'C',
+        .x = x,
+        .y = 4+(lane*LANE_HEIGHT),
+        .width = width,
+        .height = 2,  // Keep height same as frog
+        .id = i
+    };
+}
     
     while (1)
     {
@@ -59,10 +61,16 @@ void game(int pipein,int num_coccodrilli)
             }
         }
 
+
         //cancello i coccodrilli
         for(int i=0; i<num_coccodrilli; i++){
-            mvaddch(crocodile_positions[i].y, crocodile_positions[i].x, ' ');
+            for (int h = 0; h < crocodile_positions[i].height; h++) {
+                for (int w = 0; w < crocodile_positions[i].width; w++) {
+                    mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, ' ');
+                }
+            }
         }
+
 
             
         //aggiorno la posizione in base al carattere letto
@@ -77,7 +85,10 @@ void game(int pipein,int num_coccodrilli)
             }
         }
 
+
         //disegno la rana
+
+        attron(COLOR_PAIR(1));
         for (int i = 0; i < rana_pos.height; i++)
         {
             for (int j = 0; j < rana_pos.width; j++)
@@ -85,12 +96,19 @@ void game(int pipein,int num_coccodrilli)
                 mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
             }
         }
+        attroff(COLOR_PAIR(1));
 
         //disegno i coccodrilli
-
-        for (int i=0; i<num_coccodrilli; i++){
-            mvaddch(crocodile_positions[i].y, crocodile_positions[i].x, 'C');
+        attron(COLOR_PAIR(2));
+        for (int i = 0; i < num_coccodrilli; i++) {
+            for (int h = 0; h < crocodile_positions[i].height; h++) {
+                for (int w = 0; w < crocodile_positions[i].width; w++) {
+                    mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, 'C');
+                }
+            }
         }
+        attroff(COLOR_PAIR(2));
+
 
         refresh();
     }
