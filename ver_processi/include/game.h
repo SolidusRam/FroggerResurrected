@@ -12,6 +12,7 @@
 #define FLOOR_HEIGHT 20  // Actual playable area height
 #define LANES 8         // Number of lanes for obstacles
 #define LANE_HEIGHT 2   // Height of each lane
+#define MAX_CROCODILES 8 // Maximum number of crocodiles
 
 
 struct position
@@ -21,8 +22,9 @@ struct position
     int y;
     int width;
     int height;
+    int id;
 };
 
-void game(int);
+void game(int,int);
 
 #endif // GAME_H

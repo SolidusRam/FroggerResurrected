@@ -12,24 +12,32 @@ char rana_sprite[2][5] = {
 };
 
 
-void game(int pipein)
+void game(int pipein,int num_coccodrilli)
 {
     struct position p;
-    int NUM_CROCODILES = 8;
+    
 
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
-    struct position crocodile_positions [NUM_CROCODILES];
+    struct position crocodile_positions [num_coccodrilli];
 
     // Initialize all crocodile positions
-    for (int i = 0; i < NUM_CROCODILES; i++) {
-        crocodile_positions[i].c = 'C';
-        crocodile_positions[i].width = 5;
-        crocodile_positions[i].height = 1;
-        crocodile_positions[i].y = 4 + (i * LANE_HEIGHT); // Add initial y positions
-        crocodile_positions[i].x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6; // Add initial x positions
+    // i coccodrilli si dividono in corsie
+    for (int i = 0; i < num_coccodrilli; i++) {
+        int lane = i % LANES;  // Distribute across 8 lanes (0-7)
+        int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
+        int y = 4 + (lane * LANE_HEIGHT);  // Starting from y=4 with 2 units between lanes
+        
+        crocodile_positions[i] = (struct position) {
+            .c = 'C',
+            .x = x,
+            .y = y,
+            .width = 1,
+            .height = 1,
+            .id = i
+        };
     }
-
+    
     while (1)
     {
         ssize_t r = read(pipein, &p, sizeof(struct position));
@@ -41,35 +49,35 @@ void game(int pipein)
         }
 
 
-        //cancello la rana
-        if (p.c == '$') {
-            for(int i = 0; i < rana_pos.height; i++)
+        // cancello la rana
+
+        for (int i = 0; i < rana_pos.height; i++)
+        {
+            for (int j = 0; j < rana_pos.width; j++)
             {
-                for(int z = 0; z < rana_pos.width; z++)
-                {
-                    mvaddch(rana_pos.y + i, rana_pos.x + z, ' ');
+                mvaddch(rana_pos.y + i, rana_pos.x + j, ' ');
+            }
+        }
+
+        //cancello i coccodrilli
+        for(int i=0; i<num_coccodrilli; i++){
+            mvaddch(crocodile_positions[i].y, crocodile_positions[i].x, ' ');
+        }
+
+            
+        //aggiorno la posizione in base al carattere letto
+        if(p.c == '$'){
+            rana_pos = p;
+        }else if (p.c == 'C'){
+            for(int i = 0; i<num_coccodrilli; i++){
+                if (crocodile_positions[i].id == p.id){
+                    crocodile_positions[i] = p;
+                    break;
                 }
             }
-            rana_pos = p;}
-            else if (p.c == 'C') {
-            // Clear and update specific crocodile
-                for (int i = 0; i < NUM_CROCODILES; i++) {
-                    if (crocodile_positions[i].y == p.y) {  // Match exact y position
-                        // Clear old position
-                        for (int h = 0; h < crocodile_positions[i].height; h++) {
-                            for (int w = 0; w < crocodile_positions[i].width; w++) {
-                                mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, ' ');
-                            }
-                        }
-                crocodile_positions[i] = p;
-                break;
-                    }
-                }
+        }
 
-            }
-
-
-        //stampo la rana
+        //disegno la rana
         for (int i = 0; i < rana_pos.height; i++)
         {
             for (int j = 0; j < rana_pos.width; j++)
@@ -78,15 +86,10 @@ void game(int pipein)
             }
         }
 
-        // Disegno i coccodrilli
-        for (int i = 0; i < NUM_CROCODILES; i++) {
-            if (crocodile_positions[i].y != 0) {  // Only draw initialized crocodiles
-                for (int h = 0; h < crocodile_positions[i].height; h++) {
-                    for (int w = 0; w < crocodile_positions[i].width; w++) {
-                        mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, 'C');
-                    }
-                }
-            }
+        //disegno i coccodrilli
+
+        for (int i=0; i<num_coccodrilli; i++){
+            mvaddch(crocodile_positions[i].y, crocodile_positions[i].x, 'C');
         }
 
         refresh();

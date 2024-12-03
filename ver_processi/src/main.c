@@ -6,6 +6,7 @@
 
 #include "../include/game.h"
 #include "../include/player.h"
+#include "../include/crocodile.h"
 
 
 
@@ -17,7 +18,8 @@ int main(){
     int pipefd[2];  //il campo 0 è per la lettura, il campo 1 è per la scrittura
 
     int pid_rana;
-    int pid_coccodrillo;
+    int pid_coccodrilli[MAX_CROCODILES];
+    int num_coccodrilli = 8;
 
     //inizializzo schermo
     initscr();
@@ -51,29 +53,33 @@ int main(){
         _exit(1);
     }
 
-    pid_rana = fork();
-
-    if (pid_rana == -1){
-        perror("Errore nella creazione del processo figlio!\n");
-        _exit(1);
-    }else if(pid_rana == 0){
+    //avvio processi figli
+    if((pid_rana = fork()) == 0){
         close(pipefd[0]);
         rana(pipefd[1]);
+    }else if(pid_rana == -1){
+        perror("Errore nella creazione del processo rana!\n");
+        _exit(1);
     }
 
-    pid_coccodrillo = fork();
-
-    if (pid_coccodrillo == -1){
-        perror("Errore nella creazione del processo figlio!\n");
-        _exit(1);
-    }else if(pid_coccodrillo == 0){
-        close(pipefd[0]);
-        coccodrillo(pipefd[1]);
+    for(int i =0; i<num_coccodrilli; i++){
+        if((pid_coccodrilli[i] = fork()) == 0){
+            close(pipefd[0]);
+            coccodrillo(pipefd[1],i);
+        }else if(pid_coccodrilli[i] == -1){
+            perror("Errore nella creazione del processo coccodrillo!\n");
+            _exit(1);
+        }
     }
 
     close(pipefd[1]);
-    game(pipefd[0]);
+    game(pipefd[0], num_coccodrilli);
+    //chiudo i processi 
     kill(pid_rana, SIGTERM);
+    for(int i = 0; i<num_coccodrilli; i++){
+        kill(pid_coccodrilli[i], SIGTERM);
+    }
+
         
 
     endwin();
