@@ -15,6 +15,11 @@
 #define LANE_HEIGHT 2   // Height of each lane
 #define MAX_CROCODILES 8 // Maximum number of crocodiles
 
+char rana_sprite[2][5] = {
+    {' ', ' ', 'O', ' ', ' '},
+    {'_', '`', 'O', '\'', '_'}
+    
+};
 
 struct position
 {

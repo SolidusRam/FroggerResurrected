@@ -5,11 +5,6 @@
 _`O'_
 */
 
-char rana_sprite[2][5] = {
-    {' ', ' ', 'O', ' ', ' '},
-    {'_', '`', 'O', '\'', '_'}
-    
-};
 
 
 void game(int pipein,int num_coccodrilli)
