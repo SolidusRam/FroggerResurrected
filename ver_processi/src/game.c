@@ -5,6 +5,11 @@
 _`O'_
 */
 
+char rana_sprite[2][5] = {
+    {' ', ' ', 'O', ' ', ' '},
+    {'_', '`', 'O', '\'', '_'}
+    
+};
 
 
 void game(int pipein,int num_coccodrilli)
@@ -19,21 +24,21 @@ void game(int pipein,int num_coccodrilli)
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
-    int lane = i % LANES;  // Distribute across 8 lanes (0-7)
-    int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
-    
-    // Random width between 3-4 times the frog width (frog width = 5)
-    int width = (rand() % 2 + 3) * 5;  // Will give either 15 or 20 units
-    
-    crocodile_positions[i] = (struct position) {
-        .c = 'C',
-        .x = x,
-        .y = 4+(lane*LANE_HEIGHT),
-        .width = width,
-        .height = 2,  // Keep height same as frog
-        .id = i
-    };
-}
+        int lane = i % LANES;  // Distribute across 8 lanes (0-7)
+        int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
+        
+        // Random width between 3-4 times the frog width (frog width = 5)
+        int width = (rand() % 2 + 3) * 5;  // Will give either 15 or 20 units
+        
+        crocodile_positions[i] = (struct position) {
+            .c = 'C',
+            .x = x,
+            .y = 4+(lane*LANE_HEIGHT),
+            .width = width,
+            .height = 2,  // Keep height same as frog
+            .id = i
+        };
+    }
     
     while (1)
     {
@@ -74,17 +79,18 @@ void game(int pipein,int num_coccodrilli)
             bool was_on_crocodile = rana_coccodrillo(&rana_pos, crocodile_positions, num_coccodrilli, &crocodile_direction);
             if (was_on_crocodile) {
               // Aggiorna la posizione della rana in base all'input del giocatore
-                rana_pos = p;
+                rana_pos.y = p.y;
                 // Aggiungi anche il movimento del coccodrillo
                 rana_pos.x += crocodile_direction;
                 
-                // Controlla che la rana non esca dallo schermo
-                if (rana_pos.x < 1) rana_pos.x = 1;
-                if (rana_pos.x > GAME_WIDTH - rana_pos.width - 1) 
-                    rana_pos.x = GAME_WIDTH - rana_pos.width - 1;
+
             } else {
                 rana_pos = p; // Only update position if not on crocodile
             }
+            // Controlla che la rana non esca dallo schermo
+            if (rana_pos.x < 1) rana_pos.x = 1;
+            if (rana_pos.x > GAME_WIDTH - rana_pos.width - 1) 
+                rana_pos.x = GAME_WIDTH - rana_pos.width - 1;
         } else if (p.c == 'C') {
             for (int i = 0; i < num_coccodrilli; i++) {
                 if (crocodile_positions[i].id == p.id) {
