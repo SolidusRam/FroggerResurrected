@@ -19,7 +19,7 @@ int main(){
 
     int pid_rana;
     int pid_coccodrilli[MAX_CROCODILES];
-    int num_coccodrilli = 8;
+    int num_coccodrilli = LANES*2;
 
     srand(time(NULL));
     //inizializzo schermo

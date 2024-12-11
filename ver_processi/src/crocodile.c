@@ -17,15 +17,20 @@ void coccodrillo(int pipeout,int id){
     original_width = p.width;
     p.height = 2;
 
-    // direzione in base all'id
-    direction = (id % 2 == 0) ? -1 : 1;  // Alternate direction based on ID
+    //divido i coccodrilli in corsie
+    int lane = (id/2) % LANES;
 
-    // Posizionamento x casuale dentro i bordi
-    p.x= rand() % (GAME_WIDTH - p.width - 2) + 1;
+    direction = (lane % 2 == 0) ? 1 : -1; //alternare la direzione di partenza
 
-    int lane = id % LANES;  // Distribute across 8 lanes (0-7)
-    p.y = 4 + (lane * LANE_HEIGHT);  // Starting from y=4 with 2 units between lanes
+    int is_second= id % 2;
 
+    if (is_second ){
+        p.x = (GAME_WIDTH/2) + (rand() % (GAME_WIDTH/4));
+    }else{
+        p.x =rand() % (GAME_WIDTH/4);
+    }
+
+    p.y = 4+(lane*LANE_HEIGHT);
 
     while (1)
     {
