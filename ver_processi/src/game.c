@@ -81,7 +81,7 @@ void game(int pipein,int num_coccodrilli)
               // Aggiorna la posizione della rana in base all'input del giocatore
                 rana_pos.y = p.y;
                 // Aggiungi anche il movimento del coccodrillo
-                rana_pos.x += crocodile_direction;
+                rana_pos.x -= crocodile_direction;
                 
 
             } else {
@@ -136,8 +136,9 @@ bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_posit
             rana_pos->x >= crocodile_positions[i].x && 
             rana_pos->x <= crocodile_positions[i].x + crocodile_positions[i].width - rana_pos->width) {
             
-            // Set the direction based on the crocodile's ID
-            *direction = (i % 2 == 0) ? -1 : 1;
+            // Set the direction based on the crocodile's lane
+            int lane = (crocodile_positions[i].id/2) % LANES;
+            *direction = (lane % 2 == 0) ? -1 : 1;
             return true; // Frog is on crocodile
         }
     }
