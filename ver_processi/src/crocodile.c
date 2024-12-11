@@ -2,6 +2,7 @@
 
 #include <time.h>
 
+/*I coccodrilli si dividono in corsie in base al loro id */
 
 void coccodrillo(int pipeout,int id){
     srand(time(NULL)^id);
@@ -9,23 +10,19 @@ void coccodrillo(int pipeout,int id){
     int direction = 0; // 1 = right, -1 = left
     int original_width;
     
+    //inizializzo i valori del coccodrillo
     p.c = 'C';
     p.id = id;
     p.width = (rand() % 2 +2) *5;
     original_width = p.width;
     p.height = 2;
 
-    //bordo destro o sinistro
-    //stabilisco anche la direzione (opposta al bordo)
-    if(id%2 == 0){
-        p.x = GAME_WIDTH-2;
-        direction = -1;
-    }else{
-        p.x = 1;
-        direction = 1;
-    }
+    // direzione in base all'id
+    direction = (id % 2 == 0) ? -1 : 1;  // Alternate direction based on ID
 
-    //altezza in base alla corsia 
+    // Posizionamento x casuale dentro i bordi
+    p.x= rand() % (GAME_WIDTH - p.width - 2) + 1;
+
     int lane = id % LANES;  // Distribute across 8 lanes (0-7)
     p.y = 4 + (lane * LANE_HEIGHT);  // Starting from y=4 with 2 units between lanes
 
