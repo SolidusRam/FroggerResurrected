@@ -16,7 +16,7 @@ void game(int pipein,int num_coccodrilli)
 {
     struct position p;
     srand(time(NULL));
-
+    int pippo;
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
     struct position crocodile_positions [num_coccodrilli];
