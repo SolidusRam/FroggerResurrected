@@ -100,6 +100,14 @@ void game(int pipein,int num_coccodrilli)
             }
         }
 
+        //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
+        if (rana_pos.y <= 3) {
+            clear();
+            mvprintw(LINES/2, COLS/2-10, "Hai vinto!");
+            refresh();
+            sleep(1);
+            break;
+        }
 
         
 
