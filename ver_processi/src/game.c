@@ -16,7 +16,6 @@ void game(int pipein,int num_coccodrilli)
 {
     struct position p;
     srand(time(NULL));
-    int pippo;
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
     struct position crocodile_positions [num_coccodrilli];
@@ -85,13 +84,23 @@ void game(int pipein,int num_coccodrilli)
                 
 
             } else {
-                rana_pos = p; // Only update position if not on crocodile
+                //se la rana non è su un coccodrillo, controllo se e caduta in acqua
+                if(frog_on_the_water(&rana_pos)){
+                    //stampa messaggio RAANA IN ACQUA al centro dello schermo
+                    mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
+                    refresh();
+                    napms(2000);
+                    break;
+
+                }else{
+                    rana_pos = p; // Only update position if not on crocodile
+                }
             }
             // Controlla che la rana non esca dallo schermo
             if (rana_pos.x < 1) rana_pos.x = 1;
             if (rana_pos.x > GAME_WIDTH - rana_pos.width - 1) 
                 rana_pos.x = GAME_WIDTH - rana_pos.width - 1;
-        } else if (p.c == 'C') {
+        } else if (p.c == 'C') { // Update crocodile position
             for (int i = 0; i < num_coccodrilli; i++) {
                 if (crocodile_positions[i].id == p.id) {
                     crocodile_positions[i] = p;
@@ -101,13 +110,14 @@ void game(int pipein,int num_coccodrilli)
         }
 
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
-        if (rana_pos.y <= 3) {
+        if (rana_pos.y <= 0) {
             clear();
             mvprintw(LINES/2, COLS/2-10, "Hai vinto!");
             refresh();
             sleep(1);
-            break;
+            break;  // Exit the game loop
         }
+        
 
         
 
@@ -151,4 +161,11 @@ bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_posit
         }
     }
     return false; // Frog is not on any crocodile
+}
+
+bool frog_on_the_water(struct position *rana_pos){
+    if (rana_pos->y < FLOOR_HEIGHT && rana_pos->y > 3){
+        return true;
+    }
+    return false;
 }

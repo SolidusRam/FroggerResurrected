@@ -41,7 +41,7 @@ int main(){
     //game loop
     while (1)
     {
-
+        clear();
         
         resize_term(GAME_HEIGHT, GAME_WIDTH);
         

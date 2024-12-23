@@ -29,4 +29,7 @@ struct position
 void game(int,int);
 
 bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction);
+
+bool frog_on_the_water(struct position *rana_pos);
+
 #endif // GAME_H
