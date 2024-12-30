@@ -19,6 +19,7 @@ void game(int pipein,int num_coccodrilli)
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
     struct position crocodile_positions [num_coccodrilli];
+    struct position bullets[MAX_BULLETS];
 
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
@@ -37,6 +38,13 @@ void game(int pipein,int num_coccodrilli)
             .height = 2,  // Keep height same as frog
             .id = i
         };
+    }
+
+    //inizializzo i proiettili
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        bullets[i].active = 0;
+        bullets[i].id = i;
+        bullets[i].collision = 0;
     }
     
     while (1)
@@ -67,6 +75,14 @@ void game(int pipein,int num_coccodrilli)
                 for (int w = 0; w < crocodile_positions[i].width; w++) {
                     mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, ' ');
                 }
+            }
+        }
+
+         //cancello i proiettili
+        for (int i = 0; i < MAX_BULLETS; i++)
+        {
+            if(bullets[i].active){
+                mvaddch(bullets[i].y, bullets[i].x, ' ');
             }
         }
 
@@ -107,6 +123,42 @@ void game(int pipein,int num_coccodrilli)
                     break;
                 }
             }
+        }else if(p.c == '@' || p.c == '*'){
+            // Prima cerchiamo se esiste già un proiettile con lo stesso pid
+            int found = 0;
+
+            // Prima rimuovi i proiettili inattivi o morti
+            for (int i = 0; i < MAX_BULLETS; i++) {
+                if (bullets[i].active) {
+                    // Verifica se il processo è ancora vivo
+                    if (kill(bullets[i].pid, 0) == -1) {
+                        bullets[i].active = 0;
+                        bullets[i].pid = 0;
+                    }
+                }
+            }
+            for (int i = 0; i < MAX_BULLETS; i++) {
+                if (bullets[i].active && bullets[i].pid == p.pid) {\
+                    int was_collided = bullets[i].collision;
+                    bullets[i].x = p.x;
+                    bullets[i].y = p.y;
+                    bullets[i].collision = was_collided;
+                    found = 1;
+                    break;
+                }
+            }
+            
+            // Se non trovato, cerchiamo uno slot libero
+            if (!found) {
+                for (int i = 0; i < MAX_BULLETS; i++) {
+                    if (!bullets[i].active) {
+                        bullets[i] = p;
+                        bullets[i].active = 1;
+                        bullets[i].collision = 0;
+                        break;
+                    }
+                }
+            }
         }
 
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
@@ -118,7 +170,7 @@ void game(int pipein,int num_coccodrilli)
             break;  // Exit the game loop
         }
         
-
+       
         
 
         //disegno i coccodrilli
@@ -132,6 +184,27 @@ void game(int pipein,int num_coccodrilli)
         }
         attroff(COLOR_PAIR(2));
 
+        //disegno i proiettili
+        for (int i = 0; i < MAX_BULLETS; i++) {
+            if (bullets[i].active) {
+                // Prima cancelliamo il proiettile vecchio
+                mvaddch(bullets[i].y, bullets[i].x, ' ');
+                
+                // Controlliamo le collisioni con i muri
+                if(bullets[i].x <= 0 || bullets[i].x >= COLS-1) {
+                    kill(bullets[i].pid);
+                    waitpid(bullets[i].pid, NULL ); 
+                    bullets[i].active = 0;
+                    bullets[i].pid = 0;  // Reset del PID
+                    continue;
+                }
+
+                // Aggiorna la posizione solo se il proiettile è ancora attivo
+                if(bullets[i].active && !bullets[i].collision){
+                    mvaddch(bullets[i].y, bullets[i].x, bullets[i].c);
+                }
+            }
+        }
         //disegno la rana
 
         attron(COLOR_PAIR(1));

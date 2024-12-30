@@ -36,6 +36,29 @@ void rana(int pipeout)
         case KEY_RIGHT:
             if(p.x < COLS-2-p.width+1) p.x+=p.width;
             break;
+
+        case ' ':
+            struct position right_bullet = p;
+            right_bullet.c = '*';
+            right_bullet.x = p.x + p.width; // Start from right edge of frog
+            
+            // Create left bullet
+            struct position left_bullet = p;
+            left_bullet.c = '*';
+            left_bullet.x = p.x - 1; // Start from left edge of frog
+
+            // Launch right bullet
+            if(fork() == 0) {
+                bullet(pipeout, &right_bullet, 1);
+                _exit(0);
+            }
+            
+            // Launch left bullet  
+            if(fork() == 0) {
+                bullet(pipeout, &left_bullet, -1);
+                _exit(0);
+            }
+            break;
         }
 
         //svuoto il buffer di input

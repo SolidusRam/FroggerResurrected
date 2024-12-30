@@ -1,6 +1,7 @@
 #ifndef GAME_H
 #define GAME_H
 
+
 #include <unistd.h>
 #include <sys/types.h>
 #include <ncurses.h>    
@@ -14,6 +15,7 @@
 #define LANES 8         // Number of lanes for obstacles
 #define LANE_HEIGHT 2   // Height of each lane
 #define MAX_CROCODILES 8 // Maximum number of crocodiles
+#define MAX_BULLETS 100  // Maximum number of bullets
 
 
 struct position
@@ -24,6 +26,9 @@ struct position
     int width;
     int height;
     int id;
+    int active;
+    int collision;
+    pid_t pid;
 };
 
 void game(int,int);
