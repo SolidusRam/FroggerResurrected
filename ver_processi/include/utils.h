@@ -5,4 +5,4 @@
 #include <time.h>
 #include "game.h"
 
-void timeBar(int tempo);
+//void timeBar(int tempo);
