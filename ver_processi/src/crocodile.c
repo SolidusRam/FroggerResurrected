@@ -37,6 +37,25 @@ void coccodrillo(int pipeout,int id){
         handle_border_collision(&p, &original_width);
         update_position(&p, direction);
 
+        //il coccodrillo spara un proiettile il 20% delle volte
+        if(rand() % 100 < 5){
+            struct position bomb = {
+                .c = '@',
+                //dalla testa del coccodrillo
+                .x = p.x + p.width/2,
+                .y = p.y,
+                .width = 1,
+                .height = 1,
+                .active = 1,
+                .pid = getpid()
+            };
+            if(fork() == 0) {
+
+                bullet(pipeout, &bomb, direction);
+                _exit(0);
+            }
+        }
+
         //scrivo la posizione nella pipe
         write(pipeout, &p, sizeof(struct position));
 

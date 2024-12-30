@@ -1,5 +1,6 @@
 
 #include "../include/game.h" // Include the header file that defines struct position
+#include "../include/projectiles.h"
 
 void coccodrillo(int pipeout,int id);
 

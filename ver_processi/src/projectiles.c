@@ -5,7 +5,7 @@
 void bullet(int pipeout, struct position *p, int direction)
 {
     struct position bullet = {
-        .c = '*',
+        .c = p->c,
         .x = p->x,
         .y = p->y,
         .width = 1,
