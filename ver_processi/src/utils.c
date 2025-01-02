@@ -80,3 +80,63 @@ void draw_game_borders() {
     }
     attroff(COLOR_PAIR(5));
 }
+
+
+void init_dens(struct tana *tane) {
+    // Calculate spacing between dens
+    int usable_width = GAME_WIDTH - 2; // Account for borders
+    int den_space = (usable_width - (NUM_TANE * TANA_WIDTH)) / (NUM_TANE + 1);
+    int current_x = 1; // Start after left border
+    
+    for(int i = 0; i < NUM_TANE; i++) {
+        current_x += den_space; // Add spacing
+        tane[i].x = current_x;
+        tane[i].y = 1;  // Top row
+        tane[i].occupata = false;
+        current_x += TANA_WIDTH; // Move past den width
+    }
+}
+
+void draw_dens(struct tana tane[]) {
+    for(int i = 0; i < NUM_TANE; i++) {
+        // Draw den border
+        attron(COLOR_PAIR(3)); // Use river border color
+        mvaddch(tane[i].y, tane[i].x - 1, ACS_LTEE);
+        mvaddch(tane[i].y, tane[i].x + TANA_WIDTH, ACS_RTEE);
+        attroff(COLOR_PAIR(3));
+
+        if(tane[i].occupata) {
+            // Draw occupied den
+            attron(COLOR_PAIR(7)); // Color for occupied den
+            for(int w = 0; w < TANA_WIDTH; w++) {
+                mvaddch(tane[i].y, tane[i].x + w, ACS_CKBOARD);
+            }
+            attroff(COLOR_PAIR(7));
+        } else {
+            // Draw empty den
+            attron(COLOR_PAIR(6)); // Color for empty den
+            for(int w = 0; w < TANA_WIDTH; w++) {
+                mvaddch(tane[i].y, tane[i].x + w, ' ');
+            }
+            attroff(COLOR_PAIR(6));
+        }
+    }
+}
+bool check_den_collision(struct position *rana_pos, struct tana tane[]) {
+    // Center point of the frog
+    int frog_center_x = rana_pos->x + (rana_pos->width / 2);
+    
+    for(int i = 0; i < NUM_TANE; i++) {
+        // Check if den is already occupied
+        if(!tane[i].occupata) {
+            // Check if frog's center is within den bounds
+            if(frog_center_x >= tane[i].x && 
+               frog_center_x <= tane[i].x + TANA_WIDTH &&
+               rana_pos->y <= tane[i].y + TANA_HEIGHT) {
+                tane[i].occupata = true;
+                return true;
+            }
+        }
+    }
+    return false;
+}

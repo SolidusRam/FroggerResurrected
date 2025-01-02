@@ -9,7 +9,8 @@
 #include <string.h>
 #include <stdbool.h>
 #include <fcntl.h>
-#include <signal.h> 
+#include <signal.h>
+
 
 
 #define GAME_WIDTH 80    // Standard terminal width
@@ -19,6 +20,10 @@
 #define LANE_HEIGHT 2   // Height of each lane
 #define MAX_CROCODILES 8 // Maximum number of crocodiles
 #define MAX_BULLETS 100  // Maximum number of bullets
+
+#define NUM_TANE 5
+#define TANA_WIDTH 7
+#define TANA_HEIGHT 1
 
 
 struct position
@@ -34,10 +39,17 @@ struct position
     pid_t pid;
 };
 
+struct tana {
+    int x;
+    int y;
+    bool occupata;
+};
+
 void game(int,int,int);
 
 bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction);
 
 bool frog_on_the_water(struct position *rana_pos);
+
 
 #endif // GAME_H

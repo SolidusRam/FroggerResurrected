@@ -20,6 +20,9 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
     struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
     struct position crocodile_positions [num_coccodrilli];
     struct position bullets[MAX_BULLETS];
+    struct tana tane[NUM_TANE];
+    init_dens(tane);
+    int tane_occupate = 0;
 
     bool game_over = false;
 
@@ -103,8 +106,13 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
                     //stampa messaggio RAANA IN ACQUA al centro dello schermo
                     mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
                     refresh();
+                    // Reset only frog position
+                    rana_pos.x = GAME_WIDTH/2;
+                    rana_pos.y = GAME_HEIGHT-2;
+                    write(pipeToFrog, &rana_pos, sizeof(struct position));
                     napms(2000);
-                    break;
+
+                    continue;
 
                 }else{
                     rana_pos = p; // Only update position if not on crocodile
@@ -160,12 +168,22 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         }
 
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
-        if (rana_pos.y <= 0) {
-            clear();
-            mvprintw(LINES/2, COLS/2-10, "Hai vinto!");
-            refresh();
-            sleep(1);
-            break;  // Exit the game loop
+        if (rana_pos.y <= 1) { 
+            if(check_den_collision(&rana_pos, tane)) {
+                tane_occupate++;
+                // Reset rana position after filling a den
+                rana_pos.x = GAME_WIDTH/2;
+                rana_pos.y = GAME_HEIGHT-2;
+                write(pipeToFrog, &rana_pos, sizeof(struct position));
+                
+                if(tane_occupate == NUM_TANE) {
+                    clear();
+                    mvprintw(LINES/2, COLS/2-10, "HAI VINTO!");
+                    refresh();
+                    sleep(2);
+                    break;
+                }
+            }
         }
         
 
@@ -209,6 +227,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         // Draw river borders after clearing 
         draw_river_borders();
         draw_game_borders();
+        draw_dens(tane);
         //disegno i coccodrilli
         attron(COLOR_PAIR(2));
         for (int i = 0; i < num_coccodrilli; i++) {

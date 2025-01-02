@@ -42,7 +42,7 @@ void coccodrillo(int pipeout,int id){
             struct position bomb = {
                 .c = '@',
                 //dalla testa del coccodrillo
-                .x = p.x + p.width/2,
+                .x = (direction > 0) ? p.x + p.width - 1 : p.x,
                 .y = p.y,
                 .width = 1,
                 .height = 1,
