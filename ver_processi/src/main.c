@@ -29,6 +29,7 @@ int main(){
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);//colore rana
     init_pair(2, COLOR_RED, COLOR_BLACK);//colore coccodrillo
+    init_pair(3, COLOR_BLUE, COLOR_CYAN); // Color for river borders
 
 
     //controllo dimensioni schermo

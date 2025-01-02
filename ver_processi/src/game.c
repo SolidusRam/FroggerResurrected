@@ -62,13 +62,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
 
         // cancello la rana
 
-        for (int i = 0; i < rana_pos.height; i++)
-        {
-            for (int j = 0; j < rana_pos.width; j++)
-            {
-                mvaddch(rana_pos.y + i, rana_pos.x + j, ' ');
-            }
-        }
+        clear_frog_position(&rana_pos);
 
 
         //cancello i coccodrilli
@@ -174,6 +168,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
             break;  // Exit the game loop
         }
         
+
        //collisione proiettili
        //controllo se la rana è stata colpita
        for(int i=0;i<MAX_BULLETS;i++){
@@ -211,6 +206,9 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         }
         
 
+        // Draw river borders after clearing 
+        draw_river_borders();
+        draw_game_borders();
         //disegno i coccodrilli
         attron(COLOR_PAIR(2));
         for (int i = 0; i < num_coccodrilli; i++) {

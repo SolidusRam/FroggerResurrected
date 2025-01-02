@@ -6,3 +6,7 @@
 #include "game.h"
 
 //void timeBar(int tempo);
+
+void draw_river_borders();
+void clear_frog_position(struct position *pos);
+void draw_game_borders();
