@@ -8,7 +8,7 @@
     {'O', ' ', 'O'}
 };*/
 
-void rana(int pipeout)
+void rana(int pipeout,int pipein)
 {
     struct position p;
     p.c = '$';
@@ -18,8 +18,19 @@ void rana(int pipeout)
     p.width = 5;
     p.height = 2;
 
+    fcntl(pipein, F_SETFL, O_NONBLOCK);
+
     while (1)
     {
+
+        // Controlla se ci sono dati da leggere dalla pipe
+        struct position update;
+        if (read(pipein, &update, sizeof(struct position)) > 0) {
+            // Aggiorna la posizione con quella ricevuta dal game
+            p.x = update.x;
+            p.y = update.y;
+        }
+
         int ch = getch();
 
         switch (ch)

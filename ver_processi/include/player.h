@@ -2,4 +2,4 @@
 #include <ncurses.h>
 
 
-void rana(int);
+void rana(int,int);

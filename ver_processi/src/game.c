@@ -12,7 +12,7 @@ char rana_sprite[2][5] = {
 };
 
 
-void game(int pipein,int num_coccodrilli)
+void game(int pipein,int pipeToFrog,int num_coccodrilli)
 {
     struct position p;
     srand(time(NULL));
@@ -97,6 +97,8 @@ void game(int pipein,int num_coccodrilli)
                 rana_pos.y = p.y;
                 // Aggiungi anche il movimento del coccodrillo
                 rana_pos.x -= crocodile_direction;
+                fcntl(pipeToFrog, F_SETFL, O_NONBLOCK);
+                write(pipeToFrog, &rana_pos, sizeof(struct position));
                 
 
             } else {

@@ -16,6 +16,7 @@ int main(){
     //creo la pipe
 
     int pipefd[2];  //il campo 0 è per la lettura, il campo 1 è per la scrittura
+    int pipeToFrog[2]; //pipe Game -> Player
 
     int pid_rana;
     int pid_coccodrilli[MAX_CROCODILES];
@@ -65,7 +66,7 @@ int main(){
 
         //creazione dei processi e pipe
         //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
-        if (pipe(pipefd) == -1){
+        if (pipe(pipefd) == -1 || pipe(pipeToFrog) == -1){
             perror("Errore nella creazione della pipe!\n");
             _exit(1);
         }
@@ -73,7 +74,8 @@ int main(){
         //avvio processi figli
         if((pid_rana = fork()) == 0){
             close(pipefd[0]);
-            rana(pipefd[1]);
+            close(pipeToFrog[1]);
+            rana(pipefd[1],pipeToFrog[0]);
         }else if(pid_rana == -1){
             perror("Errore nella creazione del processo rana!\n");
             _exit(1);
@@ -82,6 +84,8 @@ int main(){
         for(int i =0; i<num_coccodrilli; i++){
             if((pid_coccodrilli[i] = fork()) == 0){
                 close(pipefd[0]);
+                close(pipeToFrog[0]);    // Chiude lettura pipe rana
+                close(pipeToFrog[1]);    // Chiude scrittura pipe rana
                 coccodrillo(pipefd[1],i);
             }else if(pid_coccodrilli[i] == -1){
                 perror("Errore nella creazione del processo coccodrillo!\n");
@@ -89,8 +93,9 @@ int main(){
             }
         }
 
-        close(pipefd[1]);
-        game(pipefd[0], num_coccodrilli);
+        close(pipefd[1]);          // Chiude scrittura pipe principale
+        close(pipeToFrog[0]);      // Chiude lettura pipe rana        
+        game(pipefd[0], pipeToFrog[1],num_coccodrilli);
 
         //chiudo i processi 
         kill(pid_rana, SIGTERM);
