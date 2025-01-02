@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <fcntl.h>
+#include <signal.h> 
 
 
 #define GAME_WIDTH 80    // Standard terminal width

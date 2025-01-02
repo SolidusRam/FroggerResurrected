@@ -21,6 +21,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
     struct position crocodile_positions [num_coccodrilli];
     struct position bullets[MAX_BULLETS];
 
+    bool game_over = false;
+
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
@@ -47,7 +49,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         bullets[i].collision = 0;
     }
     
-    while (1)
+    while (!game_over)
     {
         ssize_t r = read(pipein, &p, sizeof(struct position));
         if (r <= 0) {
@@ -172,7 +174,41 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
             break;  // Exit the game loop
         }
         
-       
+       //collisione proiettili
+       //controllo se la rana è stata colpita
+       for(int i=0;i<MAX_BULLETS;i++){
+            if(bullets[i].c=='@'&&bullets[i].x==rana_pos.x&&bullets[i].y==rana_pos.y&& !bullets[i].collision)
+            {
+                //stampa messaggio RANA COLPITA al centro dello schermo
+                mvprintw(LINES/2, COLS/2-10, "RANA COLPITA!");
+                refresh();
+                napms(2000);
+                //exit the game loop
+                game_over = true;
+                break;
+
+            }
+        }
+        if(game_over){
+            continue;
+        }
+       //collisione due proiettili
+        for (int i = 0; i < MAX_BULLETS; i++) {
+            if (bullets[i].active && bullets[i].c == '@' && !bullets[i].collision) {
+                for (int j = 0; j < MAX_BULLETS; j++) {
+                    if (bullets[j].active && bullets[j].c == '*'&& !bullets[j].collision) {
+                        if (bullets[i].x == bullets[j].x && bullets[i].y == bullets[j].y && !bullets[j].collision) {
+
+                            bullets[i].collision = 1;
+                            bullets[j].collision = 1;
+
+                            mvaddch(bullets[i].y, bullets[i].x, 'X');
+                            mvaddch(bullets[j].y, bullets[j].x, 'X');
+                        }
+                    }
+                }
+            }
+        }
         
 
         //disegno i coccodrilli
@@ -194,7 +230,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
                 
                 // Controlliamo le collisioni con i muri
                 if(bullets[i].x <= 0 || bullets[i].x >= COLS-1) {
-                    kill(bullets[i].pid);
+                    kill(bullets[i].pid,SIGTERM);
                     waitpid(bullets[i].pid, NULL ); 
                     bullets[i].active = 0;
                     bullets[i].pid = 0;  // Reset del PID
