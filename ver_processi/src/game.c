@@ -26,6 +26,12 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
 
     bool game_over = false;
 
+    //Inzializzazione delle variabili per la barra del tempo
+    int max_time = 30;
+    int remaining_time = max_time;
+    time_t last_update = time(NULL);
+    draw_time_bar(remaining_time, max_time);
+
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
@@ -54,6 +60,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
     
     while (!game_over)
     {
+      time_t current_time = time(NULL);
+      
         ssize_t r = read(pipein, &p, sizeof(struct position));
         if (r <= 0) {
             mvprintw(LINES/2, COLS/2-10, "Pipe read error: %s", strerror(errno));
@@ -222,7 +230,26 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
                 }
             }
         }
-        
+
+      // Se è passato un secondo, aggiorna il tempo rimanente
+
+    if (current_time - last_update >= 1) {
+
+       //aggiorna le variabili che gestiscono il tempo
+        last_update = current_time;
+        remaining_time--;
+
+        // Disegna la barra del tempo
+        draw_time_bar(remaining_time, max_time);
+
+        // Controlla se il tempo è finito
+        if (remaining_time <= 0) {
+            mvprintw(LINES / 2, COLS / 2 - 10, "TEMPO SCADUTO!");
+            refresh();
+            napms(2000);
+            game_over = true;
+        }
+    }
 
         // Draw river borders after clearing 
         draw_river_borders();
