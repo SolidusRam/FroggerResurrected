@@ -27,7 +27,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
     bool game_over = false;
 
     //Inzializzazione delle variabili per la barra del tempo
-    int max_time = 30;
+    int max_time = 30; //ho messo 30 secondi, se necessario si può incrementare
     int remaining_time = max_time;
     time_t last_update = time(NULL);
     draw_time_bar(remaining_time, max_time);
