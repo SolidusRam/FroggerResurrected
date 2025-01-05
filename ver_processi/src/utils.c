@@ -1,34 +1,29 @@
 #include "../include/utils.h"
 
-#define MAX_TIME 30 // Durata massima in secondi
-#define BAR_WIDTH 50 // Larghezza massima della barra
+void draw_time_bar(int remaining_time, int max_time) {
 
-//Funzione generica che stampa la barra del tempo in basso a sinistra delle schermo
+    int bar_length = 20;  // Lunghezza della barra
+    int filled_length = (remaining_time * bar_length) / max_time; // Calcola quanto riempire
+    int x_start = 2;      
+    int y_start = LINES - 1; 
+    
+    // Stampa etichetta
+    mvprintw(y_start, x_start, "TEMPO: ");
 
-/*void timeBar(int tempo) {
+    // Disegna barra piena (verde)
+    attron(COLOR_PAIR(1)); 
 
-    int lunghezzaB = (tempo * BAR_WIDTH) / MAX_TIME; // Calcola la lunghezza della barra
-    int x_start = 1; 
-    int y_start = LINES - 2; 
-
-// Disegna la barra vuota
-
- mvprintw(y_start - 1, x_start, "Tempo rimanente: "); // Etichetta della barra
- attron(COLOR_PAIR(2)); // Colore verde
-
- for (int i = 0; i < BAR_WIDTH; i++) {
-      mvaddch(y_start, x_start + i, ' '); // Disegna la barra vuota
- }
-
-  attroff(COLOR_PAIR(2)); // Disattiva il colore
-
-// Disegna la parte piena della barra
-attron(COLOR_PAIR(1)); // Attiva il colore pieno
- for (int i = 0; i < lunghezzaB; i++) {
-     mvaddch(y_start, x_start + i, ACS_CKBOARD); // Disegna la parte piena
+    for (int i = 0; i < filled_length; i++) {
+        mvaddch(y_start, x_start + 8 + i, ACS_CKBOARD);
     }
-    attroff(COLOR_PAIR(1)); // Disattiva il colore
-}*/
+    attroff(COLOR_PAIR(1));
+
+    // Disegna barra vuota
+    for (int i = filled_length; i < bar_length; i++) {
+        mvaddch(y_start, x_start + 8 + i, ' ');
+    }
+    refresh();
+}
 
 
 void draw_river_borders() {
