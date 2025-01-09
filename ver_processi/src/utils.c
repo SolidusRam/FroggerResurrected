@@ -22,7 +22,6 @@ void draw_time_bar(int remaining_time, int max_time) {
     for (int i = filled_length; i < bar_length; i++) {
         mvaddch(y_start, x_start + 8 + i, ' ');
     }
-    refresh();
 }
 
 

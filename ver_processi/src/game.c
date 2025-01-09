@@ -118,6 +118,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
                     rana_pos.x = GAME_WIDTH/2;
                     rana_pos.y = GAME_HEIGHT-2;
                     write(pipeToFrog, &rana_pos, sizeof(struct position));
+                    //reset del timer
+                    remaining_time = max_time;
                     napms(2000);
 
                     continue;
@@ -179,6 +181,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         if (rana_pos.y <= 1) { 
             if(check_den_collision(&rana_pos, tane)) {
                 tane_occupate++;
+                //reset del timer
+                remaining_time = max_time;
                 // Reset rana position after filling a den
                 rana_pos.x = GAME_WIDTH/2;
                 rana_pos.y = GAME_HEIGHT-2;
@@ -204,6 +208,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
                 mvprintw(LINES/2, COLS/2-10, "RANA COLPITA!");
                 refresh();
                 napms(2000);
+                //reset del timer
+                
                 //exit the game loop
                 game_over = true;
                 break;

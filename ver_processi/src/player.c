@@ -70,6 +70,13 @@ void rana(int pipeout,int pipein)
                 _exit(0);
             }
             break;
+
+            case 'q':
+                //teletrasporto il player poco prima della tana
+                p.x = GAME_WIDTH/2;
+                p.y = 3;
+                break;
+                
         }
 
         //svuoto il buffer di input
