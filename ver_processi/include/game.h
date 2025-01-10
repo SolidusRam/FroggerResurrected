@@ -18,7 +18,7 @@
 #define FLOOR_HEIGHT 20  // Actual playable area height
 #define LANES 8         // Number of lanes for obstacles
 #define LANE_HEIGHT 2   // Height of each lane
-#define MAX_CROCODILES 8 // Maximum number of crocodiles
+#define MAX_CROCODILES 16 // Maximum number of crocodiles
 #define MAX_BULLETS 100  // Maximum number of bullets
 
 #define NUM_TANE 5

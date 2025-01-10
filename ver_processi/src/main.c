@@ -96,20 +96,42 @@ int main(){
     close(pipeToFrog[0]);      // Chiude lettura pipe rana        
     game(pipefd[0], pipeToFrog[1],num_coccodrilli,&vite);
 
+    printf("DEBUG: Game ended, starting cleanup\n");
+    fflush(stdout);
+
+    // Kill crocodile processes
     for(int i = 0; i < num_coccodrilli; i++) {
-    kill(pid_coccodrilli[i], SIGTERM);
+        printf("DEBUG: Sending SIGTERM to crocodile %d (PID: %d)\n", i, pid_coccodrilli[i]);
+        fflush(stdout);
+        kill(pid_coccodrilli[i], SIGTERM);
     }
+    
+    printf("DEBUG: Sending SIGTERM to frog (PID: %d)\n", pid_rana);
+    fflush(stdout);
     kill(pid_rana, SIGTERM);
 
+    // Wait for processes to terminate
     for(int i = 0; i < num_coccodrilli; i++) {
-    waitpid(pid_coccodrilli[i], NULL, 0);
+        printf("DEBUG: Waiting for crocodile %d to terminate\n", i);
+        fflush(stdout);
+        waitpid(pid_coccodrilli[i], NULL, 0);
     }
+    
+    printf("DEBUG: Waiting for frog to terminate\n");
+    fflush(stdout);
     waitpid(pid_rana, NULL, 0);
 
+    printf("DEBUG: Closing pipes\n");
+    fflush(stdout);
+    
+    // Close remaining pipes
     close(pipefd[0]);
     close(pipefd[1]);
     close(pipeToFrog[0]);
     close(pipeToFrog[1]);
+    
+    printf("DEBUG: Cleanup complete, ending game\n");
+    fflush(stdout);
         
     endwin();
     return 0;
