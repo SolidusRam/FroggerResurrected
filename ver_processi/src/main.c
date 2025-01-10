@@ -22,6 +22,7 @@ int main(){
     int pid_coccodrilli[MAX_CROCODILES];
     int num_coccodrilli = LANES*2;
 
+    int vite = 3;
     srand(time(NULL));
     //inizializzo schermo
     initscr();
@@ -42,82 +43,74 @@ int main(){
     }
     
 
-    //game loop
-    while (1)
+    
+    resize_term(GAME_HEIGHT, GAME_WIDTH);
+    
+    //inizializzo ncurses
+    noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
+
+    box(stdscr, ACS_VLINE, ACS_HLINE);
+
+    for (int i = 0; i < GAME_WIDTH; i++)
     {
-        clear();
-        
-        resize_term(GAME_HEIGHT, GAME_WIDTH);
-        
-        //inizializzo ncurses
-        noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
+        //disegno il pavimento parte inferiore
+        mvaddch(FLOOR_HEIGHT, i, ACS_HLINE);
 
-        box(stdscr, ACS_VLINE, ACS_HLINE);
-
-        //pavimento da ristrutturare
-        for (int i = 0; i < ACS_VLINE; i++)
-        {
-            //disegno il pavimento parte inferiore
-            mvaddch(FLOOR_HEIGHT, i, ACS_HLINE);
-
-            //disegno il pavimento parte superiore
-            mvaddch(3, i, ACS_HLINE);
-        }
-
-        
-        refresh();
-
-        //creazione dei processi e pipe
-        //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
-        if (pipe(pipefd) == -1 || pipe(pipeToFrog) == -1){
-            perror("Errore nella creazione della pipe!\n");
-            _exit(1);
-        }
-
-        //avvio processi figli
-        if((pid_rana = fork()) == 0){
-            close(pipefd[0]);
-            close(pipeToFrog[1]);
-            rana(pipefd[1],pipeToFrog[0]);
-        }else if(pid_rana == -1){
-            perror("Errore nella creazione del processo rana!\n");
-            _exit(1);
-        }
-
-        for(int i =0; i<num_coccodrilli; i++){
-            if((pid_coccodrilli[i] = fork()) == 0){
-                close(pipefd[0]);
-                close(pipeToFrog[0]);    // Chiude lettura pipe rana
-                close(pipeToFrog[1]);    // Chiude scrittura pipe rana
-                coccodrillo(pipefd[1],i);
-            }else if(pid_coccodrilli[i] == -1){
-                perror("Errore nella creazione del processo coccodrillo!\n");
-                _exit(1);
-            }
-        }
-
-        close(pipefd[1]);          // Chiude scrittura pipe principale
-        close(pipeToFrog[0]);      // Chiude lettura pipe rana        
-        game(pipefd[0], pipeToFrog[1],num_coccodrilli);
-
-        //chiudo i processi 
-        kill(pid_rana, SIGTERM);
-        for(int i = 0; i<num_coccodrilli; i++){
-            kill(pid_coccodrilli[i], SIGTERM);
-        }
-
-        //attendo la terminazione dei processi
-        wait(NULL);
-        for(int i = 0; i<num_coccodrilli; i++){
-            wait(NULL);
-        }
-
-
+        //disegno il pavimento parte superiore
+        mvaddch(3, i, ACS_HLINE);
     }
 
+    
+    refresh();
 
+    //creazione dei processi e pipe
+    //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
+    if (pipe(pipefd) == -1 || pipe(pipeToFrog) == -1){
+        perror("Errore nella creazione della pipe!\n");
+        _exit(1);
+    }
+
+    //avvio processi figli
+    if((pid_rana = fork()) == 0){
+        close(pipefd[0]);
+        close(pipeToFrog[1]);
+        rana(pipefd[1],pipeToFrog[0]);
+    }else if(pid_rana == -1){
+        perror("Errore nella creazione del processo rana!\n");
+        _exit(1);
+    }
+
+    for(int i =0; i<num_coccodrilli; i++){
+        if((pid_coccodrilli[i] = fork()) == 0){
+            close(pipefd[0]);
+            close(pipeToFrog[0]);    // Chiude lettura pipe rana
+            close(pipeToFrog[1]);    // Chiude scrittura pipe rana
+            coccodrillo(pipefd[1],i);
+        }else if(pid_coccodrilli[i] == -1){
+            perror("Errore nella creazione del processo coccodrillo!\n");
+            _exit(1);
+        }
+    }
+
+    close(pipefd[1]);          // Chiude scrittura pipe principale
+    close(pipeToFrog[0]);      // Chiude lettura pipe rana        
+    game(pipefd[0], pipeToFrog[1],num_coccodrilli,&vite);
+
+    for(int i = 0; i < num_coccodrilli; i++) {
+    kill(pid_coccodrilli[i], SIGTERM);
+    }
+    kill(pid_rana, SIGTERM);
+
+    for(int i = 0; i < num_coccodrilli; i++) {
+    waitpid(pid_coccodrilli[i], NULL, 0);
+    }
+    waitpid(pid_rana, NULL, 0);
+
+    close(pipefd[0]);
+    close(pipefd[1]);
+    close(pipeToFrog[0]);
+    close(pipeToFrog[1]);
         
-
     endwin();
     return 0;
 }

@@ -12,7 +12,7 @@ char rana_sprite[2][5] = {
 };
 
 
-void game(int pipein,int pipeToFrog,int num_coccodrilli)
+void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
 {
     struct position p;
     srand(time(NULL));
@@ -58,7 +58,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
         bullets[i].collision = 0;
     }
     
-    while (!game_over)
+    while (!game_over && *vite>0)
     {
       time_t current_time = time(NULL);
       
@@ -69,6 +69,9 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
             sleep(1);
             continue;
         }
+
+        //disegno il numero di vite rimanenti
+        mvprintw(LINES-1,GAME_WIDTH-15,"Vite: %d",*vite);
 
 
         // cancello la rana
@@ -111,18 +114,29 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
             } else {
                 //se la rana non è su un coccodrillo, controllo se e caduta in acqua
                 if(frog_on_the_water(&rana_pos)){
-                    //stampa messaggio RAANA IN ACQUA al centro dello schermo
-                    mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
-                    refresh();
-                    // Reset only frog position
-                    rana_pos.x = GAME_WIDTH/2;
-                    rana_pos.y = GAME_HEIGHT-2;
-                    write(pipeToFrog, &rana_pos, sizeof(struct position));
-                    //reset del timer
-                    remaining_time = max_time;
-                    napms(2000);
+                    (*vite)--;
+                    if (*vite > 0)
+                    {
+                        //stampa messaggio RAANA IN ACQUA al centro dello schermo
+                        mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
+                        refresh();
+                        // Reset only frog position
+                        rana_pos.x = GAME_WIDTH/2;
+                        rana_pos.y = GAME_HEIGHT-2;
+                        write(pipeToFrog, &rana_pos, sizeof(struct position));
+                        //reset del timer
+                        remaining_time = max_time;
+                        napms(2000);
 
-                    continue;
+                        continue;
+                    }
+                    else{
+                        game_over = true;
+                        mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                        refresh();
+                        napms(2000);
+                        break;
+                    }
 
                 }else{
                     rana_pos = p; // Only update position if not on crocodile
@@ -201,23 +215,56 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli)
 
        //collisione proiettili
        //controllo se la rana è stata colpita
-       for(int i=0;i<MAX_BULLETS;i++){
-            if(bullets[i].c=='@'&&bullets[i].x==rana_pos.x&&bullets[i].y==rana_pos.y&& !bullets[i].collision)
-            {
-                //stampa messaggio RANA COLPITA al centro dello schermo
-                mvprintw(LINES/2, COLS/2-10, "RANA COLPITA!");
-                refresh();
-                napms(2000);
-                //reset del timer
-                
-                //exit the game loop
-                game_over = true;
-                break;
-
+        for(int i=0;i<MAX_BULLETS;i++){
+            if(bullets[i].c=='@'&&bullets[i].x==rana_pos.x&&bullets[i].y==rana_pos.y&& !bullets[i].collision){
+                (*vite)--;
+                if(*vite > 0) {
+                    // 1. Clear old position
+                    clear_frog_position(&rana_pos);
+                    
+                    // 2. Reset position
+                    rana_pos.x = GAME_WIDTH/2;
+                    rana_pos.y = GAME_HEIGHT-2;
+                    
+                    // 3. Write new position to pipe with error check
+                    ssize_t w = write(pipeToFrog, &rana_pos, sizeof(struct position));
+                    if(w < 0) {
+                        mvprintw(0, 0, "Pipe write error: %s", strerror(errno));
+                        refresh();
+                    }
+                    
+                    // 4. Show message
+                    mvprintw(LINES/2, COLS/2-10, "RANA COLPITA! Vite: %d", *vite);
+                    refresh();
+                    napms(2000);
+                    
+                    // 5. Reset timer
+                    remaining_time = max_time;
+                    
+                    // 6. Clear collision bullet
+                    bullets[i].collision = 1;
+                    
+                    // 7. Redraw frog at new position
+                    attron(COLOR_PAIR(1));
+                    for (int i = 0; i < rana_pos.height; i++)
+                    {
+                        for (int j = 0; j < rana_pos.width; j++)
+                        {
+                            mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
+                        }
+                    }
+                    attroff(COLOR_PAIR(1));
+                    refresh();
+                    
+                    break; // Exit bullet check loop
+                } else {
+                    game_over = true;
+                    mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                    refresh();
+                    napms(2000);
+                    return; // Exit game function
+                }
             }
-        }
-        if(game_over){
-            continue;
         }
        //collisione due proiettili
         for (int i = 0; i < MAX_BULLETS; i++) {
