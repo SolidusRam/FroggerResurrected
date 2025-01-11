@@ -1,12 +1,6 @@
 #include "player.h"
 
 
-/*char rana_sprite[4][3] = {
-    {' ', 'O', ' '},
-    {'O', 'O', 'O'},
-    {' ', 'O', ' '},
-    {'O', ' ', 'O'}
-};*/
 
 void rana(int pipeout,int pipein)
 {
