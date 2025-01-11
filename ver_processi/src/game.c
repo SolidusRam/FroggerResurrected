@@ -23,6 +23,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
     struct tana tane[NUM_TANE];
     init_dens(tane);
     int tane_occupate = 0;
+    int max_height_reached = GAME_HEIGHT-2; // Initialize to starting position
 
     bool game_over = false;
 
@@ -32,7 +33,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
     time_t last_update = time(NULL);
     draw_time_bar(remaining_time, max_time);
 
-  //Inizializzazione dello score
+    //Inizializzazione dello score
     int score=0;
     draw_score(score);
 
@@ -109,10 +110,13 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
             int crocodile_direction = 0;
             bool was_on_crocodile = rana_coccodrillo(&rana_pos, crocodile_positions, num_coccodrilli, &crocodile_direction);
             if (was_on_crocodile) {
-              //Aggiorna score
-              score+=5;
-              // Aggiorna la posizione della rana in base all'input del giocatore
+                //Aggiorna score
+                // Aggiorna la posizione della rana in base all'input del giocatore
                 rana_pos.y = p.y;
+                if (rana_pos.y < max_height_reached) {
+                    score += 5;
+                    max_height_reached = rana_pos.y;
+                }
                 // Aggiungi anche il movimento del coccodrillo
                 rana_pos.x -= crocodile_direction;
                 fcntl(pipeToFrog, F_SETFL, O_NONBLOCK);
@@ -125,6 +129,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                      //resetta lo score e riduce di 1 le vite
                     score=0;
                     (*vite)--;
+                    max_height_reached = GAME_HEIGHT-2; // Reset max height
+
                     if (*vite > 0)
                     {
                         //stampa messaggio RAANA IN ACQUA al centro dello schermo
@@ -151,7 +157,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                     }
 
                 }else{
-                    rana_pos = p; // Only update position if not on crocodile
+                    rana_pos = p; // Only update position if not on crocodile 
                 }
             }
             // Controlla che la rana non esca dallo schermo
@@ -210,6 +216,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                 tane_occupate++;
                 //reset del timer
                 remaining_time = max_time;
+                max_height_reached = GAME_HEIGHT-2; // Reset max height
+
                 // Reset rana position after filling a den
                 rana_pos.x = GAME_WIDTH/2;
                 rana_pos.y = GAME_HEIGHT-2;
