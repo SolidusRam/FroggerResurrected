@@ -10,7 +10,8 @@
 
 
 
-//void timeBar(int tempo);
+void draw_time_bar(int remaining_time, int max_time);
+void draw_score(int score);
 
 void draw_river_borders();
 void clear_frog_position(struct position *pos);
