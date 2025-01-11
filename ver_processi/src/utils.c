@@ -7,7 +7,6 @@ void draw_score(int score) {
 
     mvprintw(y_start, x_start, "SCORE: %d", score);
     refresh();
-
 }
 
 void draw_time_bar(int remaining_time, int max_time) {
