@@ -32,6 +32,10 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
     time_t last_update = time(NULL);
     draw_time_bar(remaining_time, max_time);
 
+  //Inizializzazione dello score
+    int score=0;
+    draw_score(score);
+
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
@@ -70,8 +74,10 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
             continue;
         }
 
+        //disegno lo score
+        draw_score(score);
         //disegno il numero di vite rimanenti
-        mvprintw(LINES-1,GAME_WIDTH-15,"Vite: %d",*vite);
+        mvprintw(LINES-1,GAME_WIDTH-20,"Vite: %d",*vite); //ho riadattato a GAME_WIDTH-20 per avere sia vite che score a schermo
 
 
         // cancello la rana
@@ -103,6 +109,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
             int crocodile_direction = 0;
             bool was_on_crocodile = rana_coccodrillo(&rana_pos, crocodile_positions, num_coccodrilli, &crocodile_direction);
             if (was_on_crocodile) {
+              //Aggiorna score
+              score+=5;
               // Aggiorna la posizione della rana in base all'input del giocatore
                 rana_pos.y = p.y;
                 // Aggiungi anche il movimento del coccodrillo
@@ -114,11 +122,14 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
             } else {
                 //se la rana non è su un coccodrillo, controllo se e caduta in acqua
                 if(frog_on_the_water(&rana_pos)){
+                     //resetta lo score e riduce di 1 le vite
+                    score=0;
                     (*vite)--;
                     if (*vite > 0)
                     {
                         //stampa messaggio RAANA IN ACQUA al centro dello schermo
                         mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
+                        score=0;
                         refresh();
                         // Reset only frog position
                         rana_pos.x = GAME_WIDTH/2;
@@ -133,6 +144,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                     else{
                         game_over = true;
                         mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                        score=0;
                         refresh();
                         napms(2000);
                         break;
@@ -194,6 +206,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
         if (rana_pos.y <= 1) { 
             if(check_den_collision(&rana_pos, tane)) {
+                score+=100;
                 tane_occupate++;
                 //reset del timer
                 remaining_time = max_time;
@@ -217,6 +230,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
        //controllo se la rana è stata colpita
         for(int i=0;i<MAX_BULLETS;i++){
             if(bullets[i].c=='@'&&bullets[i].x==rana_pos.x&&bullets[i].y==rana_pos.y&& !bullets[i].collision){
+                score=0;
                 (*vite)--;
                 if(*vite > 0) {
                     // 1. Clear old position
@@ -232,6 +246,9 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                         mvprintw(0, 0, "Pipe write error: %s", strerror(errno));
                         refresh();
                     }
+
+                    // Si resetta lo score
+                    score=0;
                     
                     // 4. Show message
                     mvprintw(LINES/2, COLS/2-10, "RANA COLPITA! Vite: %d", *vite);
@@ -260,6 +277,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                 } else {
                     game_over = true;
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                    mvprintw((LINES / 2) + 1, COLS / 2 - 10, "SCORE FINALE: %d", score);
                     refresh();
                     napms(2000);
                     return; // Exit game function
@@ -273,6 +291,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                     if (bullets[j].active && bullets[j].c == '*'&& !bullets[j].collision) {
                         if (bullets[i].x == bullets[j].x && bullets[i].y == bullets[j].y && !bullets[j].collision) {
 
+                            score+=50;
+                          
                             bullets[i].collision = 1;
                             bullets[j].collision = 1;
 
