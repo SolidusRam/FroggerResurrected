@@ -1,5 +1,15 @@
 #include "../include/utils.h"
 
+void draw_score(int score) {
+    
+    int x_start = COLS - 12; 
+    int y_start = LINES - 1; 
+
+    mvprintw(y_start, x_start, "SCORE: %d", score);
+    refresh();
+
+}
+
 void draw_time_bar(int remaining_time, int max_time) {
 
     int bar_length = 20;  // Lunghezza della barra
