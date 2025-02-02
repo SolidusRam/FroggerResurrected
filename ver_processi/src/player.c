@@ -1,6 +1,5 @@
 #include "player.h"
-
-
+#include <fcntl.h>
 
 void rana(int pipeout,int pipein)
 {

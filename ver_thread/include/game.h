@@ -2,45 +2,47 @@
 #define GAME_H
 
 #include <stdbool.h>
+#include <ncurses.h>
+#include <time.h>
 
-
-#define GAME_WIDTH 80    // Standard terminal width
-#define GAME_HEIGHT 24   // Standard terminal height
-#define FLOOR_HEIGHT 20  // Actual playable area height
-#define LANES 8         // Number of lanes for obstacles
-#define LANE_HEIGHT 2   // Height of each lane
-#define MAX_CROCODILES 16 // Maximum number of crocodiles
-#define MAX_BULLETS 100  // Maximum number of bullets
-
+// Game constants
+#define GAME_WIDTH 80
+#define GAME_HEIGHT 24
+#define FLOOR_HEIGHT 20
+#define LANES 8
+#define LANE_HEIGHT 2
+#define MAX_CROCODILES 16
+#define MAX_BULLETS 100
 #define NUM_TANE 5
 #define TANA_WIDTH 7
 #define TANA_HEIGHT 1
 
+// Forward declarations
+struct circular_buffer;
+struct message;
 
-struct position
-{
-    char c; // $ per la rana, C per il coccodrillo
+// Position structure
+typedef struct position {
+    char c;
     int x;
     int y;
     int width;
     int height;
     int id;
-    int active;
-    int collision;
-    pid_t pid;
-};
+    bool active;
+    bool collision;
+} position;
 
-struct tana {
+// Den structure
+typedef struct tana {
     int x;
     int y;
     bool occupata;
-};
+} tana;
 
+// Function declarations
+void *game_thread(void *arg);
+bool rana_coccodrillo(position *rana_pos, position crocodile_positions[], int num_coccodrilli, int *direction);
+bool frog_on_the_water(position *rana_pos);
 
-//game thread
-void * game_thread(void *arg);
-bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction);
-
-bool frog_on_the_water(struct position *rana_pos);
-
-#endif // GAME_H
+#endif

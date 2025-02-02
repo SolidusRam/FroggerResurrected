@@ -48,6 +48,7 @@ int main(){
     
     //inizializzo ncurses
     noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
+    curs_set(0); // Hide cursor
 
 
     // Initialize buffer
@@ -62,11 +63,15 @@ int main(){
     pthread_create(&game_tid, NULL, game_thread, &game_buffer);
 
     // Create crocodile threads
-    for (int i = 0; i < LANES * 2; i++) {
-        int* id = malloc(sizeof(int));
-        *id = i;
-        pthread_create(&crocodile_tids[i], NULL, crocodile_thread, &game_buffer);
-    }
+    // Create crocodile threads
+    /*for (int i = 0; i < MAX_CROCODILES; i++) {
+        message* init_msg = malloc(sizeof(message));
+        init_msg->type = MSG_CROCODILE;
+        init_msg->id = i;
+        init_msg->pos.active = true;
+        
+        pthread_create(&crocodile_tids[i], NULL, crocodile_thread, init_msg);
+    }*/
 
     // Wait for game thread
     pthread_join(game_tid, NULL);
