@@ -66,18 +66,17 @@ void* game_thread(void* arg) {
         switch (msg.type)
         {
         case MSG_PLAYER:
-            p = msg.pos;
+            rana_pos = msg.pos;
             break;
-        
         case MSG_CROCODILE:
-            // Update crocodile position
-            for (int i = 0; i < MAX_CROCODILES; i++) {
-                if (crocodile_positions[i].id == msg.pos.id) {
-                    crocodile_positions[i] = msg.pos;
-                    break;
-                }
+        for (int i = 0; i < MAX_CROCODILES; i++) {
+            if (crocodile_positions[i].id == msg.id) {
+                crocodile_positions[i] = msg.pos;
+                crocodile_positions[i].active = true;  // Important!
+                break;
             }
-            break;
+        }
+        break;
         }
 
         

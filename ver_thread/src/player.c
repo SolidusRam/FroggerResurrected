@@ -5,7 +5,6 @@
 void *player_thread(void *args) {
     struct circular_buffer* buffer = (struct circular_buffer*)args;
     message msg;
-    position old_pos;
     
     // Initialize player message
     msg.type = MSG_PLAYER;
@@ -16,62 +15,64 @@ void *player_thread(void *args) {
     msg.pos.height = 2;
     msg.pos.active = true;
     msg.id = 0;
-    
-    // Keep track of previous position
-    old_pos = msg.pos;
+    msg.status = 1; // Active status
     
     while (1) {
         int ch = getch();
         bool moved = false;
         
-        // Save old position before updating
-        old_pos = msg.pos;
-        
         switch (ch) {
             case KEY_UP:
                 if(msg.pos.y > 1) {
-                    msg.pos.y -= msg.pos.height;
+                    msg.pos.y -= 2; // Move by 2 units up
                     moved = true;
                 }
                 break;
             case KEY_DOWN:
-                if(msg.pos.y < LINES-2-msg.pos.height+1) {
-                    msg.pos.y += msg.pos.height;
+                if(msg.pos.y < GAME_HEIGHT-msg.pos.height) {
+                    msg.pos.y += 2; // Move by 2 units down
                     moved = true;
                 }
                 break;
             case KEY_LEFT:
                 if(msg.pos.x > 1) {
-                    msg.pos.x -= msg.pos.width;
+                    msg.pos.x -= 2; // Move by 2 units left
                     moved = true;
                 }
                 break;
             case KEY_RIGHT:
-                if(msg.pos.x < COLS-2-msg.pos.width+1) {
-                    msg.pos.x += msg.pos.width;
+                if(msg.pos.x < GAME_WIDTH-2-msg.pos.width) {
+                    msg.pos.x += 2; // Move by 2 units right 
                     moved = true;
                 }
                 break;
-            case 'q':
-                msg.pos.x = GAME_WIDTH/2;
-                msg.pos.y = 2;
-                moved = true;
+            case ' ': // Spacebar for shooting
+                // Send bullet message
+                message bullet_msg;
+                bullet_msg.type = MSG_PLAYER;
+                bullet_msg.pos.c = '*';
+                bullet_msg.pos.x = msg.pos.x;
+                bullet_msg.pos.y = msg.pos.y;
+                bullet_msg.pos.active = true;
+                bullet_msg.status = 1;
+                
+                buffer_put(buffer, &bullet_msg);
                 break;
         }
-        
-        // Only send message if position actually changed
-        if (moved) {
-            //svuoto il buffer di input
-            while ((ch = getch()) != ERR);
+        //clear buffer input
+        flushinp();
 
+
+        // Only send position update if moved
+        if (moved) {
             buffer_put(buffer, &msg);
-            // Add a small delay after movement
-            usleep(50000);
             
+            // Small delay after movement
+            usleep(50000);
         }
         
-        // Shorter sleep when not moving
-        usleep(50000);
+        // Regular update interval
+        usleep(20000);
     }
     
     return NULL;

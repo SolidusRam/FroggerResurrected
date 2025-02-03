@@ -11,6 +11,8 @@ void *crocodile_thread(void *args) {
     
     // Initialize crocodile message
     msg.type = MSG_CROCODILE;
+    msg.id =msg.pos.id;
+    msg.pos.active = true;
     msg.pos.c = 'C';
     msg.pos.width = (rand() % 2 + 2) * 5;
     msg.pos.height = 2;
