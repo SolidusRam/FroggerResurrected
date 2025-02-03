@@ -113,6 +113,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
                 //Aggiorna score
                 // Aggiorna la posizione della rana in base all'input del giocatore
                 rana_pos.y = p.y;
+                rana_pos.x = p.x;
                 if (rana_pos.y < max_height_reached) {
                     score += 5;
                     max_height_reached = rana_pos.y;

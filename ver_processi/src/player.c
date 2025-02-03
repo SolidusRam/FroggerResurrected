@@ -35,10 +35,10 @@ void rana(int pipeout,int pipein)
             if(p.y < LINES-2-p.height+1) p.y+=p.height;
             break;
         case KEY_LEFT:
-            if(p.x > 1) p.x-=p.width;
+            if(p.x > 1) p.x-=2;
             break;
         case KEY_RIGHT:
-            if(p.x < COLS-2-p.width+1) p.x+=p.width;
+            if(p.x < COLS-2-p.width+1) p.x+=2;
             break;
 
         case ' ':
