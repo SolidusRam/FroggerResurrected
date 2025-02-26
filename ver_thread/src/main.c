@@ -56,17 +56,18 @@ int main(){
     buffer_init(&game_buffer, BUFFER_SIZE);
 
     pthread_t player_tid, game_tid;
-    //pthread_t crocodile_tids[MAX_CROCODILES];
+    pthread_t crocodile_tids[MAX_CROCODILES];
     
     // Create threads with minimal arguments
-    pthread_create(&game_tid, NULL, game_thread, &game_buffer);
     pthread_create(&player_tid, NULL, player_thread, &game_buffer);
+    pthread_create(&game_tid, NULL, game_thread, &game_buffer);
 
-    // Create crocodile threads
-    /*
+
+    // Create crocodile threads 
+    // Create crocodile threads 
     for (int i = 0; i < MAX_CROCODILES; i++) {
-      pthread_create(&crocodile_tids[i], NULL, crocodile_thread, &game_buffer);
-    }*/
+        pthread_create(&crocodile_tids[i], NULL, crocodile_thread, &game_buffer);
+    }
 
     // Wait for game thread
     pthread_join(game_tid, NULL);
@@ -76,10 +77,10 @@ int main(){
 
     pthread_cancel(player_tid);
     
-    /*
+    
     for (int i = 0; i < LANES * 2; i++) {
         pthread_cancel(crocodile_tids[i]);
-    }*/
+    }
     buffer_destroy(&game_buffer);
 
 

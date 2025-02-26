@@ -19,17 +19,17 @@ void buffer_destroy(circular_buffer* buf) {
     pthread_cond_destroy(&buf->not_empty);
 }
 
-void buffer_put(circular_buffer* buf, message* msg) {
+void buffer_put(circular_buffer* buf, message* item) {
     pthread_mutex_lock(&buf->mutex);
     
-    // Wait if buffer is full
+    // Wait while buffer is full
     while (buf->count == buf->capacity) {
         pthread_cond_wait(&buf->not_full, &buf->mutex);
     }
     
     // Add item to buffer
-    buf->array[buf->tail] = *msg;
-    buf->tail = (buf->tail + 1) % buf->capacity;  // Circular increment
+    buf->array[buf->tail] = *item;
+    buf->tail = (buf->tail + 1) % buf->capacity;
     buf->count++;
     
     pthread_cond_signal(&buf->not_empty);
@@ -51,4 +51,23 @@ void buffer_get(circular_buffer* buf, message* msg) {
     
     pthread_cond_signal(&buf->not_full);
     pthread_mutex_unlock(&buf->mutex);
+}
+
+// Add this new function
+bool buffer_try_get(circular_buffer* buf, message* msg) {
+    pthread_mutex_lock(&buf->mutex);
+    
+    if (buf->count == 0) {
+        pthread_mutex_unlock(&buf->mutex);
+        return false;
+    }
+    
+    // Get item from buffer
+    *msg = buf->array[buf->head];
+    buf->head = (buf->head + 1) % buf->capacity;
+    buf->count--;
+    
+    pthread_cond_signal(&buf->not_full);
+    pthread_mutex_unlock(&buf->mutex);
+    return true;
 }

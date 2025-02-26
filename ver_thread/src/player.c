@@ -17,6 +17,8 @@ void *player_thread(void *args) {
     msg.id = 0;
     msg.status = 1; // Active status
     
+    buffer_put(buffer, &msg);
+
     while (1) {
         int ch = getch();
         bool moved = false;
@@ -59,8 +61,6 @@ void *player_thread(void *args) {
                 buffer_put(buffer, &bullet_msg);
                 break;
         }
-        //clear buffer input
-        flushinp();
 
 
         // Only send position update if moved
@@ -68,11 +68,11 @@ void *player_thread(void *args) {
             buffer_put(buffer, &msg);
             
             // Small delay after movement
-            usleep(50000);
+            usleep(30000);
         }
         
         // Regular update interval
-        usleep(20000);
+        usleep(10000);
     }
     
     return NULL;

@@ -34,6 +34,7 @@ void buffer_init(circular_buffer* buf, int capacity);
 void buffer_destroy(circular_buffer* buf);
 void buffer_put(circular_buffer* buf, message* msg);
 void buffer_get(circular_buffer* buf, message* msg);
+bool buffer_try_get(circular_buffer* buf, message* msg);
 
 
 #endif // BUFFER_H
