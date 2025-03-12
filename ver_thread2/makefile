@@ -1,41 +1,30 @@
-# Nome dell'eseguibile
+CC = gcc
+CFLAGS += -g -MMD -MP -fcommon
 TARGET = frogger
+LDFLAGS = -lncurses -lpthread -lm
 
-# Cartelle
 SRC_DIR = src
 INCLUDE_DIR = include
 BUILD_DIR = build
 
-# File sorgenti
 SRCS = $(wildcard $(SRC_DIR)/*.c)
-
-# File oggetto
 OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
+DEPS = $(OBJS:.o=.d)
 
-# Compilatore e flags
-CC = gcc
-CFLAGS += -g
-TARGET = frogger
-LDFLAGS = -lncurses -lpthread -lm
-
-# Regola di default
 all: $(BUILD_DIR) $(TARGET)
 
-# Creazione della cartella build
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-# Regola per costruire l'eseguibile
 $(TARGET): $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 
-# Regola per costruire i file oggetto
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
-	$(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS) -I$(INCLUDE_DIR)
 
-# Pulizia dei file compilati
+-include $(DEPS)
+
 clean:
 	@rm -rf $(BUILD_DIR) $(TARGET)
 
-# Regole di utilità
 .PHONY: all clean
