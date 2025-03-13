@@ -2,23 +2,16 @@
 #define UTILS_H
 
 #include "game.h"
-#include <stdbool.h>
 
-// Definizione della struttura tana
-typedef struct {
-    int x;
-    int y;
-    bool occupata;
-} tana;
-
-// Funzioni per disegnare la zona di gioco
+// Drawing functions
 void draw_time_bar(int remaining_time, int max_time);
 void draw_score(int score);
 void draw_river_borders(void);
-void clear_frog_position(int x, int y, int width, int height);
+void clear_frog_position(position *pos);
 void draw_game_borders(void);
 void init_dens(tana tane[]);
 void draw_dens(tana tane[]);
-bool check_den_collision(int rana_x, int rana_y, int width, int height, tana tane[]);
+void safe_mvaddch(int y, int x, chtype ch, pthread_mutex_t* screen_mutex);
+void draw_game_state(game_state* state);
 
 #endif // UTILS_H
