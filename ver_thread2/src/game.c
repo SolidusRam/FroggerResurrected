@@ -331,17 +331,14 @@ void* game_thread(void* arg) {
                         state->bullets[j].pos.collision = true;
                         pthread_mutex_unlock(&state->bullets[j].pos.mutex);
                         
-                        pthread_mutex_lock(&state->screen_mutex);
-                        mvaddch(bullet_pos.y, bullet_pos.x, 'X');
-                        refresh();
-                        pthread_mutex_unlock(&state->screen_mutex);
                         break;
                     }
                 }
             }
         }
         
-        // Redraw game state at controlled intervals to reduce flickering
+        // Redraw game state - using our improved double buffering function
+        // This will handle all drawing without screen flicker
         draw_game_state(state);
         
         // Sleep for stable frame rate

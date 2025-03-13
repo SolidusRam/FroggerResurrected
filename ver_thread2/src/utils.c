@@ -127,67 +127,137 @@ void draw_dens(tana tane[]) {
     }
 }
 
-// Draw the entire game state atomically
+// Draw the entire game state atomically with double buffering
 void draw_game_state(game_state* state) {
+    static WINDOW* buffer_win = NULL;
+    
     pthread_mutex_lock(&state->screen_mutex);
     
-    // Clear the screen for redraw
-    clear();
+    // Inizializza il buffer solo una volta
+    if (buffer_win == NULL) {
+        buffer_win = newpad(GAME_HEIGHT, GAME_WIDTH);
+    }
     
-    // Draw background elements
-    draw_game_borders();
-    draw_river_borders();
-    draw_dens(state->tane);
+    // Inizializza il buffer prima di disegnare
+    werase(buffer_win);  // Uso werase invece di wclear per migliori performance
     
-    // Draw crocodiles
-    attron(COLOR_PAIR(2));
+    // Draw background elements to buffer
+    box(buffer_win, ACS_VLINE, ACS_HLINE);
+    
+    // Draw borders on buffer_win
+    // Draw river borders
+    wattron(buffer_win, COLOR_PAIR(3));
+    mvwhline(buffer_win, 3, 1, ACS_HLINE, GAME_WIDTH-2);
+    mvwaddch(buffer_win, 3, 0, ACS_LTEE);
+    mvwaddch(buffer_win, 3, GAME_WIDTH-1, ACS_RTEE);
+    mvwhline(buffer_win, FLOOR_HEIGHT, 1, ACS_HLINE, GAME_WIDTH-2);
+    mvwaddch(buffer_win, FLOOR_HEIGHT, 0, ACS_LTEE);
+    mvwaddch(buffer_win, FLOOR_HEIGHT, GAME_WIDTH-1, ACS_RTEE);
+    wattroff(buffer_win, COLOR_PAIR(3));
+    
+    // Draw game borders on buffer
+    wattron(buffer_win, COLOR_PAIR(5));
+    for (int x = 1; x < GAME_WIDTH-1; x++) {
+        for (int y = FLOOR_HEIGHT+1; y < GAME_HEIGHT-1; y++) {
+            mvwaddch(buffer_win, y, x, ACS_CKBOARD);
+        }
+    }
+    for (int x = 1; x < GAME_WIDTH-1; x++) {
+        for (int y = 1; y < 3; y++) {
+            mvwaddch(buffer_win, y, x, ACS_CKBOARD);
+        }
+    }
+    wattroff(buffer_win, COLOR_PAIR(5));
+    
+    // Draw dens on buffer
+    for(int i = 0; i < NUM_TANE; i++) {
+        wattron(buffer_win, COLOR_PAIR(3));
+        mvwaddch(buffer_win, state->tane[i].y, state->tane[i].x - 1, ACS_LTEE);
+        mvwaddch(buffer_win, state->tane[i].y, state->tane[i].x + TANA_WIDTH, ACS_RTEE);
+        wattroff(buffer_win, COLOR_PAIR(3));
+
+        if(state->tane[i].occupata) {
+            wattron(buffer_win, COLOR_PAIR(7));
+            for(int w = 0; w < TANA_WIDTH; w++) {
+                mvwaddch(buffer_win, state->tane[i].y, state->tane[i].x + w, ACS_CKBOARD);
+            }
+            wattroff(buffer_win, COLOR_PAIR(7));
+        } else {
+            wattron(buffer_win, COLOR_PAIR(6));
+            for(int w = 0; w < TANA_WIDTH; w++) {
+                mvwaddch(buffer_win, state->tane[i].y, state->tane[i].x + w, ' ');
+            }
+            wattroff(buffer_win, COLOR_PAIR(6));
+        }
+    }
+    
+    // Draw crocodiles on buffer
+    wattron(buffer_win, COLOR_PAIR(2));
     for (int i = 0; i < MAX_CROCODILES; i++) {
         if (state->crocodiles[i].active) {
             pthread_mutex_lock(&state->crocodiles[i].mutex);
             for (int h = 0; h < state->crocodiles[i].height; h++) {
                 for (int w = 0; w < state->crocodiles[i].width; w++) {
-                    mvaddch(state->crocodiles[i].y + h, 
+                    mvwaddch(buffer_win, state->crocodiles[i].y + h, 
                            state->crocodiles[i].x + w, 'C');
                 }
             }
             pthread_mutex_unlock(&state->crocodiles[i].mutex);
         }
     }
-    attroff(COLOR_PAIR(2));
+    wattroff(buffer_win, COLOR_PAIR(2));
     
-    // Draw bullets
+    // Draw bullets on buffer
     for (int i = 0; i < MAX_BULLETS; i++) {
+        pthread_mutex_lock(&state->bullets[i].pos.mutex);
         if (state->bullets[i].pos.active && !state->bullets[i].pos.collision) {
-            pthread_mutex_lock(&state->bullets[i].pos.mutex);
-            mvaddch(state->bullets[i].pos.y, 
+            mvwaddch(buffer_win, state->bullets[i].pos.y, 
                    state->bullets[i].pos.x, 
                    state->bullets[i].is_enemy ? '@' : '*');
-            pthread_mutex_unlock(&state->bullets[i].pos.mutex);
         }
+        pthread_mutex_unlock(&state->bullets[i].pos.mutex);
     }
     
-    // Draw player
-    attron(COLOR_PAIR(1));
+    // Draw player on buffer
+    wattron(buffer_win, COLOR_PAIR(1));
     pthread_mutex_lock(&state->player.mutex);
     if (state->player.active) {
         for (int i = 0; i < state->player.height; i++) {
             for (int j = 0; j < state->player.width; j++) {
-                mvaddch(state->player.y + i, 
+                mvwaddch(buffer_win, state->player.y + i, 
                        state->player.x + j, 
                        rana_sprite[i][j]);
             }
         }
     }
     pthread_mutex_unlock(&state->player.mutex);
-    attroff(COLOR_PAIR(1));
+    wattroff(buffer_win, COLOR_PAIR(1));
     
-    // Status info
-    draw_score(state->score);
-    mvprintw(LINES-1, GAME_WIDTH-20, "Vite: %d", state->vite);
-    draw_time_bar(state->remaining_time, state->max_time);
+    // Status info on buffer
+    mvwprintw(buffer_win, LINES-1, COLS - 12, "SCORE: %d", state->score);
+    mvwprintw(buffer_win, LINES-1, GAME_WIDTH-20, "Vite: %d", state->vite);
     
-    // Refresh screen
-    refresh();
+    // Draw time bar on buffer
+    int bar_length = 20;
+    int filled_length = (state->remaining_time * bar_length) / state->max_time;
+    int x_start = 2;      
+    int y_start = LINES - 1;
+    
+    mvwprintw(buffer_win, y_start, x_start, "TEMPO: ");
+    wattron(buffer_win, COLOR_PAIR(1)); 
+    for (int i = 0; i < filled_length; i++) {
+        mvwaddch(buffer_win, y_start, x_start + 8 + i, ACS_CKBOARD);
+    }
+    wattroff(buffer_win, COLOR_PAIR(1));
+    for (int i = filled_length; i < bar_length; i++) {
+        mvwaddch(buffer_win, y_start, x_start + 8 + i, ' ');
+    }
+    
+    // Non usiamo clear() qui, fa sfarfallare lo schermo
+    
+    // Copy buffer to screen in one operation
+    // prefresh e più efficiente di pnoutrefresh+doupdate perché fa tutto in un'operazione
+    prefresh(buffer_win, 0, 0, 0, 0, GAME_HEIGHT-1, GAME_WIDTH-1);
     
     pthread_mutex_unlock(&state->screen_mutex);
 }

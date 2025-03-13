@@ -49,6 +49,11 @@ int main() {
     keypad(stdscr, TRUE);
     curs_set(0);  // Hide cursor
     
+    // Pulizia iniziale dello schermo per evitare caratteri casuali
+    clear();
+    box(stdscr, ACS_VLINE, ACS_HLINE);
+    refresh();
+    
     // Create and initialize game state
     game_state state;
     init_game_state(&state);
@@ -57,6 +62,9 @@ int main() {
     // Set up signal handlers for clean exit
     signal(SIGINT, cleanup_handler);
     signal(SIGTERM, cleanup_handler);
+    
+    // Disegno iniziale dello stato di gioco
+    draw_game_state(&state);
     
     // Create threads
     pthread_t player_tid, game_tid;
