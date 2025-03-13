@@ -254,10 +254,25 @@ void* game_thread(void* arg) {
             // Check for bullet collision with player
             if (is_enemy) {
                 pthread_mutex_lock(&state->player.mutex);
-                bool hit = (bullet_pos.x >= state->player.x && 
-                           bullet_pos.x <= state->player.x + state->player.width &&
-                           bullet_pos.y >= state->player.y && 
-                           bullet_pos.y <= state->player.y + state->player.height);
+                
+                // Nuova logica di rilevamento della collisione più precisa
+                bool hit = false;
+                
+                // Verifichiamo se il proiettile colpisce un carattere effettivo della rana e non uno spazio
+                if (bullet_pos.x >= state->player.x && 
+                    bullet_pos.x < state->player.x + state->player.width &&
+                    bullet_pos.y >= state->player.y && 
+                    bullet_pos.y < state->player.y + state->player.height) {
+                    
+                    // Calcoliamo la posizione relativa all'interno del pattern della rana
+                    int rel_x = bullet_pos.x - state->player.x;
+                    int rel_y = bullet_pos.y - state->player.y;
+                    
+                    // Verifichiamo se il carattere nella posizione del proiettile è effettivamente parte della rana
+                    char rana_char = rana_sprite[rel_y][rel_x];
+                    hit = (rana_char != ' ');
+                }
+                
                 pthread_mutex_unlock(&state->player.mutex);
                 
                 if (hit) {
