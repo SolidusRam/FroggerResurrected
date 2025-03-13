@@ -35,6 +35,8 @@ void init_game_state(game_state* state) {
     state->remaining_time = state->max_time;
     state->last_update = time(NULL);
     state->tane_occupate = 0;
+    state->player_on_crocodile = false;
+    state->player_crocodile_id = -1;
     
     // Initialize crocodiles
     for (int i = 0; i < MAX_CROCODILES; i++) {
@@ -93,6 +95,9 @@ void destroy_game_state(game_state* state) {
 void* game_thread(void* arg) {
     game_state* state = (game_state*)arg;
     int max_height_reached = GAME_HEIGHT-2; // Track highest position for scoring
+
+    // Time between screen updates (milliseconds)
+    const long FRAME_DELAY = 80000; // 80ms = 12.5 fps
     
     while (!state->game_over && state->vite > 0) {
         // Update timer
@@ -114,47 +119,40 @@ void* game_thread(void* arg) {
             pthread_mutex_unlock(&state->game_mutex);
         }
         
-        // Check if frog is on a crocodile
+        // Check if player is on any crocodile
         pthread_mutex_lock(&state->player.mutex);
         position player_copy = state->player; // Make a copy to avoid holding lock during checks
         pthread_mutex_unlock(&state->player.mutex);
         
-        int crocodile_direction = 0;
-        bool was_on_crocodile = false;
-        
-        // Check collision with crocodiles
-        for (int i = 0; i < MAX_CROCODILES; i++) {
-            pthread_mutex_lock(&state->crocodiles[i].mutex);
-            position croc = state->crocodiles[i]; // Copy to avoid holding lock
-            pthread_mutex_unlock(&state->crocodiles[i].mutex);
-            
-            if (croc.active && 
-                player_copy.y == croc.y && 
-                player_copy.x >= croc.x && 
-                player_copy.x <= croc.x + croc.width - player_copy.width) {
+        // Solo se il player non è già su un coccodrillo, controlliamo se è atterrato su uno
+        if (!state->player_on_crocodile) {
+            // Check for new collisions with crocodiles
+            for (int i = 0; i < MAX_CROCODILES; i++) {
+                pthread_mutex_lock(&state->crocodiles[i].mutex);
+                position croc = state->crocodiles[i]; // Copy to avoid holding lock
+                pthread_mutex_unlock(&state->crocodiles[i].mutex);
                 
-                int lane = (croc.id/2) % LANES;
-                crocodile_direction = (lane % 2 == 0) ? 1 : -1;
-                was_on_crocodile = true;
-                break;
+                if (croc.active && 
+                    player_copy.y == croc.y && 
+                    player_copy.x >= croc.x && 
+                    player_copy.x + player_copy.width <= croc.x + croc.width) {
+                    
+                    state->player_on_crocodile = true;
+                    state->player_crocodile_id = i;
+                    
+                    pthread_mutex_lock(&state->game_mutex);
+                    if (player_copy.y < max_height_reached) {
+                        state->score += 5;
+                        max_height_reached = player_copy.y;
+                    }
+                    pthread_mutex_unlock(&state->game_mutex);
+                    break;
+                }
             }
         }
         
-        // Update player position if on a crocodile
-        if (was_on_crocodile) {
-            pthread_mutex_lock(&state->player.mutex);
-            state->player.x += crocodile_direction; // Move with the crocodile
-            
-            // Check for scoring if player moved upward
-            if (state->player.y < max_height_reached) {
-                pthread_mutex_lock(&state->game_mutex);
-                state->score += 5;
-                pthread_mutex_unlock(&state->game_mutex);
-                max_height_reached = state->player.y;
-            }
-            pthread_mutex_unlock(&state->player.mutex);
-        } else if (frog_on_the_water(&player_copy)) {
-            // Player fell in water
+        // Player fell in water check
+        if (!state->player_on_crocodile && frog_on_the_water(&player_copy)) {
             pthread_mutex_lock(&state->game_mutex);
             state->score = 0;
             state->vite--;
@@ -215,6 +213,10 @@ void* game_thread(void* arg) {
                         state->player.x = GAME_WIDTH/2;
                         state->player.y = GAME_HEIGHT-2;
                         
+                        // Reset player-crocodile relationship
+                        state->player_on_crocodile = false;
+                        state->player_crocodile_id = -1;
+                        
                         // Check win condition
                         if (state->tane_occupate == NUM_TANE) {
                             pthread_mutex_lock(&state->screen_mutex);
@@ -236,7 +238,12 @@ void* game_thread(void* arg) {
         
         // Check bullet collisions
         for (int i = 0; i < MAX_BULLETS; i++) {
-            if (!state->bullets[i].pos.active || state->bullets[i].pos.collision) 
+            pthread_mutex_lock(&state->bullets[i].pos.mutex);
+            bool is_active = state->bullets[i].pos.active;
+            bool is_collided = state->bullets[i].pos.collision;
+            pthread_mutex_unlock(&state->bullets[i].pos.mutex);
+            
+            if (!is_active || is_collided) 
                 continue;
             
             pthread_mutex_lock(&state->bullets[i].pos.mutex);
@@ -245,31 +252,36 @@ void* game_thread(void* arg) {
             pthread_mutex_unlock(&state->bullets[i].pos.mutex);
             
             // Check for bullet collision with player
-            if (is_enemy && bullet_pos.active && !bullet_pos.collision) {
+            if (is_enemy) {
                 pthread_mutex_lock(&state->player.mutex);
-                if (bullet_pos.x >= state->player.x && 
-                    bullet_pos.x <= state->player.x + state->player.width &&
-                    bullet_pos.y >= state->player.y && 
-                    bullet_pos.y <= state->player.y + state->player.height) {
-                    
+                bool hit = (bullet_pos.x >= state->player.x && 
+                           bullet_pos.x <= state->player.x + state->player.width &&
+                           bullet_pos.y >= state->player.y && 
+                           bullet_pos.y <= state->player.y + state->player.height);
+                pthread_mutex_unlock(&state->player.mutex);
+                
+                if (hit) {
                     pthread_mutex_lock(&state->game_mutex);
                     state->score = 0;
                     state->vite--;
                     
+                    pthread_mutex_lock(&state->bullets[i].pos.mutex);
+                    state->bullets[i].pos.collision = true;
+                    pthread_mutex_unlock(&state->bullets[i].pos.mutex);
+                    
                     if (state->vite > 0) {
                         // Reset player position
+                        pthread_mutex_lock(&state->player.mutex);
                         state->player.x = GAME_WIDTH/2;
                         state->player.y = GAME_HEIGHT-2;
+                        state->player_on_crocodile = false;
+                        state->player_crocodile_id = -1;
+                        pthread_mutex_unlock(&state->player.mutex);
                         
                         pthread_mutex_lock(&state->screen_mutex);
                         mvprintw(LINES/2, COLS/2-10, "RANA COLPITA! Vite: %d", state->vite);
                         refresh();
                         pthread_mutex_unlock(&state->screen_mutex);
-                        
-                        // Mark bullet as collided
-                        pthread_mutex_lock(&state->bullets[i].pos.mutex);
-                        state->bullets[i].pos.collision = true;
-                        pthread_mutex_unlock(&state->bullets[i].pos.mutex);
                         
                         // Reset timer
                         state->remaining_time = state->max_time;
@@ -288,21 +300,24 @@ void* game_thread(void* arg) {
                         napms(2000);
                     }
                 }
-                pthread_mutex_unlock(&state->player.mutex);
             }
             
             // Check for bullet-bullet collisions
             if (is_enemy) {
                 for (int j = 0; j < MAX_BULLETS; j++) {
-                    if (j == i || !state->bullets[j].pos.active || 
-                        state->bullets[j].is_enemy || state->bullets[j].pos.collision)
-                        continue;
+                    if (j == i) continue;
                     
                     pthread_mutex_lock(&state->bullets[j].pos.mutex);
-                    position player_bullet = state->bullets[j].pos;
+                    bool j_active = state->bullets[j].pos.active;
+                    bool j_enemy = state->bullets[j].is_enemy;
+                    bool j_collided = state->bullets[j].pos.collision;
+                    position j_pos = state->bullets[j].pos;
                     pthread_mutex_unlock(&state->bullets[j].pos.mutex);
                     
-                    if (bullet_pos.x == player_bullet.x && bullet_pos.y == player_bullet.y) {
+                    if (!j_active || j_enemy || j_collided)
+                        continue;
+                    
+                    if (bullet_pos.x == j_pos.x && bullet_pos.y == j_pos.y) {
                         // Bullets collided
                         pthread_mutex_lock(&state->game_mutex);
                         state->score += 50;
@@ -320,16 +335,17 @@ void* game_thread(void* arg) {
                         mvaddch(bullet_pos.y, bullet_pos.x, 'X');
                         refresh();
                         pthread_mutex_unlock(&state->screen_mutex);
+                        break;
                     }
                 }
             }
         }
         
-        // Redraw the game state
+        // Redraw game state at controlled intervals to reduce flickering
         draw_game_state(state);
         
-        // Sleep to control game speed
-        usleep(50000);
+        // Sleep for stable frame rate
+        usleep(FRAME_DELAY);
     }
     
     return NULL;
@@ -340,7 +356,7 @@ bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int nu
         // Check if frog is on crocodile
         if (rana_pos->y == crocodile_positions[i].y && 
             rana_pos->x >= crocodile_positions[i].x && 
-            rana_pos->x <= crocodile_positions[i].x + crocodile_positions[i].width - rana_pos->width) {
+            rana_pos->x + rana_pos->width <= crocodile_positions[i].x + crocodile_positions[i].width) {
             
             // Set the direction based on the crocodile's lane
             int lane = (crocodile_positions[i].id/2) % LANES;

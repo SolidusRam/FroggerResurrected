@@ -4,9 +4,20 @@
 #include <time.h>
 #include <pthread.h>
 #include <ncurses.h>
+#include <signal.h>
 
 #include "../include/game.h"
 #include "../include/utils.h"
+
+// Global state for signal handler
+game_state* global_state = NULL;
+
+// Signal handler for clean exit
+void cleanup_handler(int signo) {
+    if (global_state) {
+        global_state->game_over = true;
+    }
+}
 
 int main() {
     // Initialize random number generator
@@ -41,6 +52,11 @@ int main() {
     // Create and initialize game state
     game_state state;
     init_game_state(&state);
+    global_state = &state;  // Set global pointer for signal handler
+    
+    // Set up signal handlers for clean exit
+    signal(SIGINT, cleanup_handler);
+    signal(SIGTERM, cleanup_handler);
     
     // Create threads
     pthread_t player_tid, game_tid;
@@ -66,24 +82,29 @@ int main() {
     
     // Game over, clean up
     for (int i = 0; i < MAX_CROCODILES; i++) {
+        // Cancel the thread but then join to ensure clean termination
         pthread_cancel(crocodile_tids[i]);
+        pthread_join(crocodile_tids[i], NULL);
         free(croc_args[i]); // Free the argument structures
     }
     pthread_cancel(player_tid);
+    pthread_join(player_tid, NULL);
     
     // Clean up bullets
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (state.bullets[i].pos.active) {
             pthread_cancel(state.bullets[i].thread_id);
+            pthread_join(state.bullets[i].thread_id, NULL);
         }
     }
     
     // Clean up resources
     destroy_game_state(&state);
+    global_state = NULL;
     
     // Display final message
     clear();
-    mvprintw(LINES/2, COLS/2 - 10, "Game Over - Score: %d", state.score);
+    mvprintw(LINES/2, COLS/2 - 15, "Game Over - Score: %d", state.score);
     refresh();
     sleep(2);
     

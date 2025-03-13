@@ -3,6 +3,9 @@
 #include <time.h>
 #include <stdlib.h>
 
+// Velocità di movimento del coccodrillo in microsecondi (300000 = 0.3 secondi)
+#define CROCODILE_SPEED 300000
+
 void* crocodile_thread(void* arg) {
     crocodile_args* args = (crocodile_args*)arg;
     game_state* state = args->state;
@@ -10,7 +13,8 @@ void* crocodile_thread(void* arg) {
     
     // Copy required data under lock to avoid holding lock during sleep
     pthread_mutex_lock(&state->crocodiles[id].mutex);
-    int direction = ((state->crocodiles[id].id / 2) % LANES) % 2 == 0 ? 1 : -1;
+    int lane = (state->crocodiles[id].id / 2) % LANES;
+    int direction = (lane % 2 == 0) ? 1 : -1;
     int original_width = state->crocodiles[id].width;
     pthread_mutex_unlock(&state->crocodiles[id].mutex);
     
@@ -21,8 +25,20 @@ void* crocodile_thread(void* arg) {
         // Lock position for update
         pthread_mutex_lock(&state->crocodiles[id].mutex);
         
+        // Controlla se il player è su questo coccodrillo per garantire
+        // movimento sincronizzato
+        bool has_player = (state->player_on_crocodile && state->player_crocodile_id == id);
+        
         // Update position
         state->crocodiles[id].x += direction;
+        
+        // Se il player è sul coccodrillo, lo muoviamo con esso
+        if (has_player) {
+            pthread_mutex_lock(&state->player.mutex);
+            // Sposta la rana esattamente con la stessa velocità del coccodrillo
+            state->player.x += direction;
+            pthread_mutex_unlock(&state->player.mutex);
+        }
         
         // Handle boundary wrapping
         if (direction > 0) {  // Moving right
@@ -35,6 +51,14 @@ void* crocodile_thread(void* arg) {
                     // Wrap around to left side
                     state->crocodiles[id].x = 1;
                     state->crocodiles[id].width = 1; // Start growing from left side
+                    
+                    // Se il player è sul coccodrillo che sta sparendo, cade in acqua
+                    if (has_player) {
+                        pthread_mutex_lock(&state->game_mutex);
+                        state->player_on_crocodile = false;
+                        state->player_crocodile_id = -1;
+                        pthread_mutex_unlock(&state->game_mutex);
+                    }
                 }
             } else if (state->crocodiles[id].width < original_width) {
                 // Keep growing when entering from left
@@ -50,11 +74,26 @@ void* crocodile_thread(void* arg) {
                     // Wrap around to right side
                     state->crocodiles[id].x = GAME_WIDTH - 2;
                     state->crocodiles[id].width = 1; // Start growing from right side
+                    
+                    // Se il player è sul coccodrillo che sta sparendo, cade in acqua
+                    if (has_player) {
+                        pthread_mutex_lock(&state->game_mutex);
+                        state->player_on_crocodile = false;
+                        state->player_crocodile_id = -1;
+                        pthread_mutex_unlock(&state->game_mutex);
+                    }
                 }
             } else if (state->crocodiles[id].width < original_width) {
                 // Keep growing when entering from right
                 state->crocodiles[id].width++;
                 state->crocodiles[id].x--;
+                
+                // Se il player è sul coccodrillo, dobbiamo mantenerlo nella posizione relativa
+                if (has_player) {
+                    pthread_mutex_lock(&state->player.mutex);
+                    state->player.x--;
+                    pthread_mutex_unlock(&state->player.mutex);
+                }
             }
         }
         
@@ -92,7 +131,7 @@ void* crocodile_thread(void* arg) {
         pthread_mutex_unlock(&state->crocodiles[id].mutex);
         
         // Sleep to control movement speed (slower than player)
-        usleep(300000);
+        usleep(CROCODILE_SPEED);
     }
     
     // Free allocated memory for arguments

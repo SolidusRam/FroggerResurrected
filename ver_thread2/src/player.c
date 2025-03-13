@@ -16,6 +16,11 @@ void* player_thread(void* arg) {
         // Lock player position for safe updates
         pthread_mutex_lock(&state->player.mutex);
         
+        // Make a copy of current position for collision checks
+        int prev_x = state->player.x;
+        int prev_y = state->player.y;
+        bool was_on_crocodile = state->player_on_crocodile;
+        
         switch (ch) {
             case KEY_UP:
                 if (state->player.y > 1) {
@@ -110,9 +115,18 @@ void* player_thread(void* arg) {
         if (state->player.x > GAME_WIDTH - state->player.width - 1) 
             state->player.x = GAME_WIDTH - state->player.width - 1;
         
+        // If player moved horizontally or vertically, reset crocodile association
+        if ((prev_x != state->player.x || prev_y != state->player.y) && 
+            was_on_crocodile) {
+            // When player moves by themselves, they are no longer riding a crocodile
+            // The game thread will re-detect if they landed on another crocodile
+            state->player_on_crocodile = false;
+            state->player_crocodile_id = -1;
+        }
+        
         pthread_mutex_unlock(&state->player.mutex);
         
-        // Small delay to prevent CPU hogging
+        // Small delay to prevent CPU hogging and reduce input repetition
         usleep(50000);
     }
     

@@ -48,6 +48,7 @@ int main(){
     
     //inizializzo ncurses
     noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
+    curs_set(0);  // Hide cursor
 
     box(stdscr, ACS_VLINE, ACS_HLINE);
 

@@ -71,6 +71,10 @@ typedef struct {
     
     // Den status
     int tane_occupate;
+    
+    // Player-crocodile association
+    bool player_on_crocodile;         // Is player currently on a crocodile
+    int player_crocodile_id;          // ID of crocodile player is riding
 } game_state;
 
 // Thread argument structures
@@ -96,8 +100,10 @@ bool frog_on_the_water(position* rana_pos);
 bool check_den_collision(position* rana_pos, tana* tane, int num_tane);
 int find_free_bullet_slot(game_state* state);
 
-// Initialize positions
+// Initialize and cleanup functions
 void init_game_state(game_state* state);
+void destroy_game_state(game_state* state);
+void update_player_on_crocodile(game_state* state);
 
 extern char rana_sprite[2][5];
 
