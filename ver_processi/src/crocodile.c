@@ -9,6 +9,7 @@ void coccodrillo(int pipeout,int id){
     struct position p;
     int direction = 0; // 1 = right, -1 = left
     int original_width;
+    int speed;
     
     //inizializzo i valori del coccodrillo
     p.c = 'C';
@@ -21,6 +22,27 @@ void coccodrillo(int pipeout,int id){
     int lane = (id/2) % LANES;
 
     direction = (lane % 2 == 0) ? 1 : -1; //alternare la direzione di partenza
+
+    // Assegno differenti velocità in base alla corsia
+    // Più basso è il valore, più veloce sarà il coccodrillo
+    switch(lane % 4) {
+        case 0:
+            speed = 250000; // lane 0, 4, 8 - velocità media
+            break;
+        case 1:
+            speed = 300000; // lane 1, 5, 9 - velocità lenta
+            break;
+        case 2:
+            speed = 180000; // lane 2, 6, 10 - velocità veloce
+            break;
+        case 3:
+            speed = 220000; // lane 3, 7, 11 - velocità medio-veloce
+            break;
+    }
+
+    // Aggiungo un po' di variazione alla velocità del 10%
+    speed = speed * (90 + rand() % 21) / 100;
+
 
     int is_second= id % 2;
 
@@ -59,7 +81,7 @@ void coccodrillo(int pipeout,int id){
         //scrivo la posizione nella pipe
         write(pipeout, &p, sizeof(struct position));
 
-        usleep(200000);
+        usleep(speed);
     }
     
 
