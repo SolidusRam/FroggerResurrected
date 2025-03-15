@@ -15,6 +15,9 @@ void init_game_state(game_state* state) {
     pthread_mutex_init(&state->game_mutex, NULL);
     pthread_mutex_init(&state->screen_mutex, NULL);
     pthread_cond_init(&state->game_update_cond, NULL);
+
+    buffer_init(&state->event_buffer, BUFFER_SIZE);
+
     
     // Initialize player
     state->player.c = '$';
@@ -89,6 +92,8 @@ void destroy_game_state(game_state* state) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         pthread_mutex_destroy(&state->bullets[i].pos.mutex);
     }
+
+    buffer_destroy(&state->event_buffer);
 }
 
 // Main game loop thread
@@ -352,6 +357,44 @@ void* game_thread(void* arg) {
             }
         }
         
+        // Nel game_thread, aggiungere il consumo dei messaggi
+        game_message msg;
+
+        // Processa tutti i messaggi disponibili
+        while (buffer_try_get(&state->event_buffer, &msg)) {
+            switch (msg.type) {
+                case MSG_PLAYER:
+                    // Aggiorna posizione player
+                    pthread_mutex_lock(&state->player.mutex);
+                    state->player = msg.pos;
+                    pthread_mutex_unlock(&state->player.mutex);
+                    break;
+                    
+                case MSG_CROCODILE:
+                    // Aggiorna posizione coccodrillo
+                    pthread_mutex_lock(&state->crocodiles[msg.id].mutex);
+                    state->crocodiles[msg.id] = msg.pos;
+                    pthread_mutex_unlock(&state->crocodiles[msg.id].mutex);
+                    
+                    // Se il player è sul coccodrillo, aggiorna posizione player
+                    if (state->player_on_crocodile && state->player_crocodile_id == msg.id) {
+                        pthread_mutex_lock(&state->player.mutex);
+                        state->player.x += msg.direction;
+                        pthread_mutex_unlock(&state->player.mutex);
+                    }
+                    break;
+                    
+                case MSG_BULLET:
+                    // Aggiorna posizione proiettile
+                    pthread_mutex_lock(&state->bullets[msg.id].pos.mutex);
+                    state->bullets[msg.id].pos = msg.pos;
+                    pthread_mutex_unlock(&state->bullets[msg.id].pos.mutex);
+                    break;
+            }
+        }
+
+        // Continua con il normale processing del gioco
+
         // Redraw game state - using our improved double buffering function
         // This will handle all drawing without screen flicker
         draw_game_state(state);
