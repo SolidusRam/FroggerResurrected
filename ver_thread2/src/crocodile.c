@@ -32,14 +32,6 @@ void* crocodile_thread(void* arg) {
         // Update position
         state->crocodiles[id].x += direction;
         
-        // Se il player è sul coccodrillo, lo muoviamo con esso
-        if (has_player) {
-            pthread_mutex_lock(&state->player.mutex);
-            // Sposta la rana esattamente con la stessa velocità del coccodrillo
-            state->player.x += direction;
-            pthread_mutex_unlock(&state->player.mutex);
-        }
-        
         // Handle boundary wrapping
         if (direction > 0) {  // Moving right
             if (state->crocodiles[id].x + state->crocodiles[id].width > GAME_WIDTH - 1) {
@@ -127,6 +119,21 @@ void* crocodile_thread(void* arg) {
             }
             pthread_mutex_unlock(&state->game_mutex);
         }
+        
+        // Modificare la parte in crocodile_thread che aggiorna lo stato
+        // Al posto di aggiornare direttamente state->crocodiles[id]
+        
+        // Dopo aver calcolato la nuova posizione
+        game_message msg;
+        msg.type = MSG_CROCODILE;
+        msg.id = id;
+        msg.pos = state->crocodiles[id]; // Copiare i valori aggiornati
+        msg.direction = direction;
+        
+        // Invia il messaggio invece di aggiornare direttamente
+        buffer_put(&state->event_buffer, &msg);
+        
+        // Rimuovere la manipolazione del player qui, sarà gestita dal game_thread
         
         pthread_mutex_unlock(&state->crocodiles[id].mutex);
         

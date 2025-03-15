@@ -17,6 +17,7 @@
 #define NUM_TANE 5
 #define TANA_WIDTH 7
 #define TANA_HEIGHT 1
+#define BUFFER_SIZE 100
 
 // Shared game state
 typedef struct {
@@ -45,6 +46,31 @@ typedef struct {
     pthread_t thread_id;    // Thread ID for this bullet
     bool is_enemy;          // true if from crocodile, false if from player
 } bullet;
+
+typedef enum {
+    MSG_PLAYER,
+    MSG_CROCODILE,
+    MSG_BULLET
+} message_type;
+
+typedef struct {
+    message_type type;
+    position pos;
+    int id;
+    int direction;
+    bool is_enemy;
+} game_message;
+
+typedef struct {
+    game_message* array;
+    int capacity;
+    int head;
+    int tail;
+    int count;
+    pthread_mutex_t mutex;
+    pthread_cond_t not_full;
+    pthread_cond_t not_empty;
+} circular_buffer;
 
 // Game state structure - shared between all threads
 typedef struct {
@@ -75,6 +101,8 @@ typedef struct {
     // Player-crocodile association
     bool player_on_crocodile;         // Is player currently on a crocodile
     int player_crocodile_id;          // ID of crocodile player is riding
+
+    circular_buffer event_buffer;
 } game_state;
 
 // Thread argument structures

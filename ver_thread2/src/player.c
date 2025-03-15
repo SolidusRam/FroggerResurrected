@@ -124,6 +124,12 @@ void* player_thread(void* arg) {
             state->player_crocodile_id = -1;
         }
         
+        game_message msg;
+        msg.type = MSG_PLAYER;
+        msg.id = 0; // Player ID è sempre 0
+        msg.pos = state->player; // Copiare i valori aggiornati
+        buffer_put(&state->event_buffer, &msg);
+
         pthread_mutex_unlock(&state->player.mutex);
         
         // Small delay to prevent CPU hogging and reduce input repetition
