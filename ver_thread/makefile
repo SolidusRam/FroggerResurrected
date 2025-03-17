@@ -14,8 +14,7 @@ OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
 
 # Compilatore e flags
 CC = gcc
-CFLAGS += -g
-TARGET = frogger
+CFLAGS = -Wall -Wextra -I$(INCLUDE_DIR) -g
 LDFLAGS = -lncurses -lpthread -lm
 
 # Regola di default

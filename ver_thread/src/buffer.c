@@ -1,8 +1,8 @@
-#include "../include/buffer.h"
+#include "../include/game.h"
 #include <stdlib.h>
 
 void buffer_init(circular_buffer* buf, int capacity) {
-    buf->array = malloc(capacity * sizeof(message));
+    buf->array = malloc(capacity * sizeof(game_message));
     buf->capacity = capacity;
     buf->head = 0;
     buf->tail = 0;
@@ -19,7 +19,7 @@ void buffer_destroy(circular_buffer* buf) {
     pthread_cond_destroy(&buf->not_empty);
 }
 
-void buffer_put(circular_buffer* buf, message* item) {
+void buffer_put(circular_buffer* buf, game_message* item) {
     pthread_mutex_lock(&buf->mutex);
     
     // Wait while buffer is full
@@ -36,7 +36,7 @@ void buffer_put(circular_buffer* buf, message* item) {
     pthread_mutex_unlock(&buf->mutex);
 }
 
-void buffer_get(circular_buffer* buf, message* msg) {
+void buffer_get(circular_buffer* buf, game_message* msg) {
     pthread_mutex_lock(&buf->mutex);
     
     // Wait if buffer is empty
@@ -46,15 +46,14 @@ void buffer_get(circular_buffer* buf, message* msg) {
     
     // Get item from buffer
     *msg = buf->array[buf->head];
-    buf->head = (buf->head + 1) % buf->capacity;  // Circular increment
+    buf->head = (buf->head + 1) % buf->capacity;
     buf->count--;
     
     pthread_cond_signal(&buf->not_full);
     pthread_mutex_unlock(&buf->mutex);
 }
 
-// Add this new function
-bool buffer_try_get(circular_buffer* buf, message* msg) {
+bool buffer_try_get(circular_buffer* buf, game_message* msg) {
     pthread_mutex_lock(&buf->mutex);
     
     if (buf->count == 0) {

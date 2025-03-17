@@ -1,91 +1,123 @@
 #include <stdio.h>
-#include <ncurses.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <time.h>
+#include <pthread.h>
+#include <ncurses.h>
 #include <signal.h>
 
 #include "../include/game.h"
-#include "../include/player.h"
-#include "../include/crocodile.h"
-#include "../include/buffer.h"
+#include "../include/utils.h"
 
-int main(){
-    /*
-    // Buffer operations
-    void buffer_init(circular_buffer* buf, int capacity);
-    void buffer_destroy(circular_buffer* buf);
-    void buffer_put(circular_buffer* buf, struct position* item);
-    void buffer_get(circular_buffer* buf, struct position* item);
+// Global state for signal handler
+game_state* global_state = NULL;
 
-    // Thread functions
-    void* player_thread(void* arg);
-    void* crocodile_thread(void* arg);
-    void* projectile_thread(void* arg);
-    void* game_thread(void* arg);
-    */
+// Signal handler for clean exit
+void cleanup_handler(int signo) {
+    if (global_state) {
+        global_state->game_over = true;
+    }
+}
 
-    //inizializzo schermo
+int main() {
+    // Initialize random number generator
+    srand(time(NULL));
+    
+    // Initialize ncurses
     initscr();
-
     start_color();
-    init_pair(1, COLOR_GREEN, COLOR_BLACK);//colore rana
-    init_pair(2, COLOR_RED, COLOR_BLACK);//colore coccodrillo
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);  // Player color
+    init_pair(2, COLOR_RED, COLOR_BLACK);    // Crocodile color
     init_pair(3, COLOR_BLUE, COLOR_CYAN);    // River borders
+    init_pair(5, COLOR_YELLOW, COLOR_RED);   // Land color
     init_pair(6, COLOR_GREEN, COLOR_BLACK);  // Empty den
     init_pair(7, COLOR_YELLOW, COLOR_GREEN); // Occupied den
-
-
-    //controllo dimensioni schermo
+    
+    // Check terminal size
     if (LINES < GAME_HEIGHT || COLS < GAME_WIDTH) {
         endwin();
-        fprintf(stderr, "Terminal too small. Needs at least %dx%d\n", GAME_WIDTH, GAME_HEIGHT);
+        fprintf(stderr, "Terminal too small. Needs at least %dx%d but got %dx%d\n", 
+                GAME_WIDTH, GAME_HEIGHT, COLS, LINES);
         exit(1);
     }
     
-
-    
+    // Set up terminal
     resize_term(GAME_HEIGHT, GAME_WIDTH);
+    noecho();
+    cbreak();
+    nodelay(stdscr, TRUE);
+    keypad(stdscr, TRUE);
+    curs_set(0);  // Hide cursor
     
-    //inizializzo ncurses
-    noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
-    curs_set(0); // Hide cursor
-
-
-    // Initialize buffer
-    circular_buffer game_buffer;
-    buffer_init(&game_buffer, BUFFER_SIZE);
-
+    // Pulizia iniziale dello schermo per evitare caratteri casuali
+    clear();
+    box(stdscr, ACS_VLINE, ACS_HLINE);
+    refresh();
+    
+    // Create and initialize game state
+    game_state state;
+    init_game_state(&state);
+    global_state = &state;  // Set global pointer for signal handler
+    
+    // Set up signal handlers for clean exit
+    signal(SIGINT, cleanup_handler);
+    signal(SIGTERM, cleanup_handler);
+    
+    // Disegno iniziale dello stato di gioco
+    draw_game_state(&state);
+    
+    // Create threads
     pthread_t player_tid, game_tid;
     pthread_t crocodile_tids[MAX_CROCODILES];
+    crocodile_args* croc_args[MAX_CROCODILES];
     
-    // Create threads with minimal arguments
-    pthread_create(&player_tid, NULL, player_thread, &game_buffer);
-    pthread_create(&game_tid, NULL, game_thread, &game_buffer);
-
-
-    // Create crocodile threads 
-    // Create crocodile threads 
+    // Start game thread
+    pthread_create(&game_tid, NULL, game_thread, &state);
+    
+    // Start player thread
+    pthread_create(&player_tid, NULL, player_thread, &state);
+    
+    // Start crocodile threads
     for (int i = 0; i < MAX_CROCODILES; i++) {
-        pthread_create(&crocodile_tids[i], NULL, crocodile_thread, &game_buffer);
+        croc_args[i] = malloc(sizeof(crocodile_args));
+        croc_args[i]->state = &state;
+        croc_args[i]->id = i;
+        pthread_create(&crocodile_tids[i], NULL, crocodile_thread, croc_args[i]);
     }
-
-    // Wait for game thread
+    
+    // Wait for game thread to finish
     pthread_join(game_tid, NULL);
-
-
-    // Cleanup
-
-    pthread_cancel(player_tid);
     
-    
-    for (int i = 0; i < LANES * 2; i++) {
+    // Game over, clean up
+    for (int i = 0; i < MAX_CROCODILES; i++) {
+        // Cancel the thread but then join to ensure clean termination
         pthread_cancel(crocodile_tids[i]);
+        pthread_join(crocodile_tids[i], NULL);
+        free(croc_args[i]); // Free the argument structures
     }
-    buffer_destroy(&game_buffer);
-
-
+    pthread_cancel(player_tid);
+    pthread_join(player_tid, NULL);
+    
+    // Clean up bullets
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        if (state.bullets[i].pos.active) {
+            pthread_cancel(state.bullets[i].thread_id);
+            pthread_join(state.bullets[i].thread_id, NULL);
+        }
+    }
+    
+    // Clean up resources
+    destroy_game_state(&state);
+    global_state = NULL;
+    
+    // Display final message
+    clear();
+    mvprintw(LINES/2, COLS/2 - 15, "Game Over - Score: %d", state.score);
+    refresh();
+    sleep(2);
+    
+    // End ncurses
     endwin();
+    
     return 0;
-
-
 }
