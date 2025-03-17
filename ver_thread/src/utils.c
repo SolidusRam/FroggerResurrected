@@ -253,34 +253,6 @@ void draw_game_state(game_state* state) {
         mvwaddch(buffer_win, y_start, x_start + 8 + i, ' ');
     }
     
-    // Display pause indicator if game is paused
-    pthread_mutex_lock(&state->pause_mutex);
-    if (state->game_paused) {
-        // Define a box in the middle of the screen for the pause message
-        int box_width = 20;
-        int box_height = 5;
-        int box_x = (GAME_WIDTH - box_width) / 2;
-        int box_y = (GAME_HEIGHT - box_height) / 2;
-
-        // Draw a box with a border
-        for (int y = 0; y < box_height; y++) {
-            for (int x = 0; x < box_width; x++) {
-                if (y == 0 || y == box_height - 1 || x == 0 || x == box_width - 1) {
-                    // Border
-                    mvwaddch(buffer_win, box_y + y, box_x + x, ACS_CKBOARD);
-                } else {
-                    // Interior (filled with spaces)
-                    mvwaddch(buffer_win, box_y + y, box_x + x, ' ');
-                }
-            }
-        }
-
-        // Add pause message
-        mvwprintw(buffer_win, box_y + 2, box_x + 3, "GIOCO IN PAUSA");
-        mvwprintw(buffer_win, box_y + 3, box_x + 2, "Premi 'p' per continuare");
-    }
-    pthread_mutex_unlock(&state->pause_mutex);
-    
     // Non usiamo clear() qui, fa sfarfallare lo schermo
     
     // Copy buffer to screen in one operation

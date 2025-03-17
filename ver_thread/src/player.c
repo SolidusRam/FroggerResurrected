@@ -13,32 +13,6 @@ void* player_thread(void* arg) {
             continue;
         }
         
-        // Handle pause key separately from player movement
-        if (ch == 'p' || ch == 'P') {
-            pthread_mutex_lock(&state->pause_mutex);
-            state->game_paused = !state->game_paused;  // Toggle pause state
-            
-            if (!state->game_paused) {
-                // Game is being unpaused, signal the condition
-                pthread_cond_signal(&state->pause_cond);
-            }
-            
-            pthread_mutex_unlock(&state->pause_mutex);
-            
-            // After toggling pause, skip the rest of the input handling
-            continue;
-        }
-        
-        // Skip movement handling if game is paused
-        pthread_mutex_lock(&state->pause_mutex);
-        bool is_paused = state->game_paused;
-        pthread_mutex_unlock(&state->pause_mutex);
-        
-        if (is_paused) {
-            // Don't process movement if paused
-            continue;
-        }
-        
         // Lock player position for safe updates
         pthread_mutex_lock(&state->player.mutex);
         

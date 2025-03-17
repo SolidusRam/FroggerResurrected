@@ -14,17 +14,6 @@ void* bullet_thread(void* arg) {
             break;
         }
         
-        // Check if game is paused
-        pthread_mutex_lock(&state->pause_mutex);
-        bool is_paused = state->game_paused;
-        pthread_mutex_unlock(&state->pause_mutex);
-        
-        if (is_paused) {
-            // If paused, just wait a bit and check again
-            usleep(100000);  // 100ms
-            continue;
-        }
-        
         // Lock position for update
         pthread_mutex_lock(&state->bullets[bullet_id].pos.mutex);
         
@@ -44,16 +33,6 @@ void* bullet_thread(void* arg) {
             pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
             break;
         }
-        
-        // Create message to update bullet position
-        game_message msg;
-        msg.type = MSG_BULLET;
-        msg.id = bullet_id;
-        msg.pos = state->bullets[bullet_id].pos;
-        msg.is_enemy = state->bullets[bullet_id].is_enemy;
-        
-        // Send the message to the game thread
-        buffer_put(&state->event_buffer, &msg);
         
         pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
         
