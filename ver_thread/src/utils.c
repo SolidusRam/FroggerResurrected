@@ -1,5 +1,16 @@
 #include "../include/utils.h"
 
+//Sprite per il movimento del coccodrillo verso sinistra o destra
+char crocodile_sprite_sx[2][15] = {
+    {' ', '_', '_', '_', '/', '^', '\\', '_', '_', '_', '_', '_', '_', '_', '_'},
+    {'/', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '='}
+};
+
+char crocodile_sprite_dx[2][15] = {
+    {'_', '_', '_', '_', '_', '_', '_', '/', '^', '\\', '_', '_', '_', '_', ' '},
+    {'=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '\\'}
+};
+
 void safe_mvaddch(int y, int x, chtype ch, pthread_mutex_t* screen_mutex) {
     pthread_mutex_lock(screen_mutex);
     mvaddch(y, x, ch);
@@ -196,10 +207,19 @@ void draw_game_state(game_state* state) {
     for (int i = 0; i < MAX_CROCODILES; i++) {
         if (state->crocodiles[i].active) {
             pthread_mutex_lock(&state->crocodiles[i].mutex);
+
+            //si decide quale sprite utilizzare a seconda della direzione
+            char (*sprite)[15];  // Puntatore a un array di caratteri
+        if ((i / 2) % 2 == 0) { 
+            sprite = crocodile_sprite_dx; // Muove a destra
+        } else {
+            sprite = crocodile_sprite_sx; // Muove a sinistra
+        }
+            
             for (int h = 0; h < state->crocodiles[i].height; h++) {
                 for (int w = 0; w < state->crocodiles[i].width; w++) {
                     mvwaddch(buffer_win, state->crocodiles[i].y + h, 
-                           state->crocodiles[i].x + w, 'C');
+                           state->crocodiles[i].x + w, sprite[h][w]); //stampa sprite
                 }
             }
             pthread_mutex_unlock(&state->crocodiles[i].mutex);
