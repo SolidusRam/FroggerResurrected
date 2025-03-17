@@ -14,7 +14,9 @@ void init_game_state(game_state* state) {
     // Initialize mutex and condition variables
     pthread_mutex_init(&state->game_mutex, NULL);
     pthread_mutex_init(&state->screen_mutex, NULL);
+    pthread_mutex_init(&state->pause_mutex, NULL);
     pthread_cond_init(&state->game_update_cond, NULL);
+    pthread_cond_init(&state->pause_cond, NULL);
 
     buffer_init(&state->event_buffer, BUFFER_SIZE);
 
@@ -34,6 +36,7 @@ void init_game_state(game_state* state) {
     state->vite = 3;
     state->score = 0;
     state->game_over = false;
+    state->game_paused = false;  // Game starts unpaused
     state->max_time = 30;
     state->remaining_time = state->max_time;
     state->last_update = time(NULL);
@@ -81,7 +84,9 @@ void init_game_state(game_state* state) {
 void destroy_game_state(game_state* state) {
     pthread_mutex_destroy(&state->game_mutex);
     pthread_mutex_destroy(&state->screen_mutex);
+    pthread_mutex_destroy(&state->pause_mutex);
     pthread_cond_destroy(&state->game_update_cond);
+    pthread_cond_destroy(&state->pause_cond);
     
     pthread_mutex_destroy(&state->player.mutex);
     
@@ -105,6 +110,26 @@ void* game_thread(void* arg) {
     const long FRAME_DELAY = 80000; // 80ms = 12.5 fps
     
     while (!state->game_over && state->vite > 0) {
+        // Check if game is paused
+        pthread_mutex_lock(&state->pause_mutex);
+        while (state->game_paused && !state->game_over) {
+            // Display pause message
+            pthread_mutex_lock(&state->screen_mutex);
+            mvprintw(LINES/2, COLS/2-10, "GIOCO IN PAUSA");
+            mvprintw(LINES/2+1, COLS/2-15, "Premi 'p' per continuare");
+            refresh();
+            pthread_mutex_unlock(&state->screen_mutex);
+            
+            // Wait for pause condition signal
+            pthread_cond_wait(&state->pause_cond, &state->pause_mutex);
+        }
+        pthread_mutex_unlock(&state->pause_mutex);
+        
+        // Skip game logic if game is over
+        if (state->game_over) {
+            break;
+        }
+        
         // Update timer
         time_t current_time = time(NULL);
         if (current_time - state->last_update >= 1) {

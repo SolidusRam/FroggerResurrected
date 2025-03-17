@@ -86,6 +86,7 @@ typedef struct {
     
     // Game status
     bool game_over;
+    bool game_paused;       // Flag to indicate if game is paused
     int remaining_time;
     int max_time;
     time_t last_update;
@@ -94,6 +95,8 @@ typedef struct {
     pthread_mutex_t game_mutex;       // Overall game state mutex
     pthread_mutex_t screen_mutex;     // Screen drawing mutex
     pthread_cond_t game_update_cond;  // Condition for game updates
+    pthread_mutex_t pause_mutex;      // Mutex for pause state
+    pthread_cond_t pause_cond;        // Condition variable for pause/resume
     
     // Den status
     int tane_occupate;

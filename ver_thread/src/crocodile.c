@@ -22,6 +22,17 @@ void* crocodile_thread(void* arg) {
     srand(time(NULL) ^ id);
     
     while (!state->game_over) {
+        // Check if game is paused
+        pthread_mutex_lock(&state->pause_mutex);
+        bool is_paused = state->game_paused;
+        pthread_mutex_unlock(&state->pause_mutex);
+        
+        if (is_paused) {
+            // If paused, just wait a bit and check again
+            usleep(100000);  // 100ms
+            continue;
+        }
+        
         // Lock position for update
         pthread_mutex_lock(&state->crocodiles[id].mutex);
         
