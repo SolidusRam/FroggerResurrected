@@ -13,6 +13,36 @@ void* player_thread(void* arg) {
             continue;
         }
         
+        // Handle pause toggle
+        if (ch == 'p' || ch == 'P') {
+            pthread_mutex_lock(&state->game_mutex);
+            state->game_paused = !state->game_paused;
+            
+            // Show pause message when paused
+            if (state->game_paused) {
+                pthread_mutex_lock(&state->screen_mutex);
+                mvprintw(LINES/2, COLS/2-10, "GIOCO IN PAUSA");
+                mvprintw(LINES/2+1, COLS/2-15, "Premi 'p' per continuare");
+                refresh();
+                pthread_mutex_unlock(&state->screen_mutex);
+            } else {
+                // When unpausing, update the last_update time to avoid time jump
+                state->last_update = time(NULL);
+                
+                // Redraw game state to clear pause message
+                draw_game_state(state);
+            }
+            
+            pthread_mutex_unlock(&state->game_mutex);
+            continue; // Skip other input processing when toggling pause
+        }
+        
+        // If game is paused, ignore all other inputs except 'p'
+        if (state->game_paused) {
+            usleep(50000);
+            continue;
+        }
+        
         // Lock player position for safe updates
         pthread_mutex_lock(&state->player.mutex);
         

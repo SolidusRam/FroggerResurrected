@@ -86,6 +86,7 @@ typedef struct {
     
     // Game status
     bool game_over;
+    bool game_paused;       // Flag for game pause
     int remaining_time;
     int max_time;
     time_t last_update;

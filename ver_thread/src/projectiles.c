@@ -14,6 +14,12 @@ void* bullet_thread(void* arg) {
             break;
         }
         
+        // Check pause condition - pause bullets when game is paused
+        if (state->game_paused) {
+            usleep(50000); // Check pause state every 50ms
+            continue;
+        }
+        
         // Lock position for update
         pthread_mutex_lock(&state->bullets[bullet_id].pos.mutex);
         
@@ -34,7 +40,17 @@ void* bullet_thread(void* arg) {
             break;
         }
         
+        // Crea messaggio per buffer
+        game_message msg;
+        msg.type = MSG_BULLET;
+        msg.id = bullet_id;
+        msg.pos = state->bullets[bullet_id].pos;
+        
+        // Unlock before putting message in buffer
         pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
+        
+        // Put message in buffer
+        buffer_put(&state->event_buffer, &msg);
         
         // Control bullet speed (faster than player/crocodile)
         usleep(50000); 

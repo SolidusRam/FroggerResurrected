@@ -34,6 +34,7 @@ void init_game_state(game_state* state) {
     state->vite = 3;
     state->score = 0;
     state->game_over = false;
+    state->game_paused = false;  // Initialize pause flag
     state->max_time = 30;
     state->remaining_time = state->max_time;
     state->last_update = time(NULL);
@@ -105,6 +106,13 @@ void* game_thread(void* arg) {
     const long FRAME_DELAY = 80000; // 80ms = 12.5 fps
     
     while (!state->game_over && state->vite > 0) {
+        // Check if game is paused
+        if (state->game_paused) {
+            // When paused, we still need to check for unpause input
+            usleep(FRAME_DELAY);
+            continue;
+        }
+        
         // Update timer
         time_t current_time = time(NULL);
         if (current_time - state->last_update >= 1) {
@@ -459,8 +467,6 @@ void* game_thread(void* arg) {
                     break;
             }
         }
-
-        // Continua con il normale processing del gioco
 
         // Redraw game state - using our improved double buffering function
         // This will handle all drawing without screen flicker

@@ -22,6 +22,12 @@ void* crocodile_thread(void* arg) {
     srand(time(NULL) ^ id);
     
     while (!state->game_over) {
+        // Check if game is paused
+        if (state->game_paused) {
+            usleep(100000); // Sleep briefly and check pause flag again
+            continue;
+        }
+        
         // Lock position for update
         pthread_mutex_lock(&state->crocodiles[id].mutex);
         
@@ -89,35 +95,38 @@ void* crocodile_thread(void* arg) {
             }
         }
         
-        // Randomly shoot bullet (5% chance)
-        if (rand() % 100 < 5) {
-            pthread_mutex_lock(&state->game_mutex);
-            int bullet_idx = find_free_bullet_slot(state);
-            if (bullet_idx >= 0) {
-                pthread_mutex_lock(&state->bullets[bullet_idx].pos.mutex);
-                
-                state->bullets[bullet_idx].pos.c = '@';
-                state->bullets[bullet_idx].pos.x = (direction > 0) ? 
-                    state->crocodiles[id].x + state->crocodiles[id].width - 1 : state->crocodiles[id].x;
-                state->bullets[bullet_idx].pos.y = state->crocodiles[id].y;
-                state->bullets[bullet_idx].pos.width = 1;
-                state->bullets[bullet_idx].pos.height = 1;
-                state->bullets[bullet_idx].pos.active = true;
-                state->bullets[bullet_idx].pos.collision = false;
-                state->bullets[bullet_idx].direction = direction;
-                state->bullets[bullet_idx].is_enemy = true;
-                
-                pthread_mutex_unlock(&state->bullets[bullet_idx].pos.mutex);
-                
-                // Create thread arguments
-                bullet_args* b_args = malloc(sizeof(bullet_args));
-                b_args->state = state;
-                b_args->bullet_id = bullet_idx;
-                
-                // Create thread for bullet
-                pthread_create(&state->bullets[bullet_idx].thread_id, NULL, bullet_thread, b_args);
+        // Don't shoot if the game is paused
+        if (!state->game_paused) {
+            // Randomly shoot bullet (5% chance)
+            if (rand() % 100 < 5) {
+                pthread_mutex_lock(&state->game_mutex);
+                int bullet_idx = find_free_bullet_slot(state);
+                if (bullet_idx >= 0) {
+                    pthread_mutex_lock(&state->bullets[bullet_idx].pos.mutex);
+                    
+                    state->bullets[bullet_idx].pos.c = '@';
+                    state->bullets[bullet_idx].pos.x = (direction > 0) ? 
+                        state->crocodiles[id].x + state->crocodiles[id].width - 1 : state->crocodiles[id].x;
+                    state->bullets[bullet_idx].pos.y = state->crocodiles[id].y;
+                    state->bullets[bullet_idx].pos.width = 1;
+                    state->bullets[bullet_idx].pos.height = 1;
+                    state->bullets[bullet_idx].pos.active = true;
+                    state->bullets[bullet_idx].pos.collision = false;
+                    state->bullets[bullet_idx].direction = direction;
+                    state->bullets[bullet_idx].is_enemy = true;
+                    
+                    pthread_mutex_unlock(&state->bullets[bullet_idx].pos.mutex);
+                    
+                    // Create thread arguments
+                    bullet_args* b_args = malloc(sizeof(bullet_args));
+                    b_args->state = state;
+                    b_args->bullet_id = bullet_idx;
+                    
+                    // Create thread for bullet
+                    pthread_create(&state->bullets[bullet_idx].thread_id, NULL, bullet_thread, b_args);
+                }
+                pthread_mutex_unlock(&state->game_mutex);
             }
-            pthread_mutex_unlock(&state->game_mutex);
         }
         
         // Modificare la parte in crocodile_thread che aggiorna lo stato
