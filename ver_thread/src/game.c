@@ -122,12 +122,24 @@ void* game_thread(void* arg) {
             
             // Check if time is up
             if (state->remaining_time <= 0) {
+                // Imposta game_over prima di tutto il resto
+                state->game_over = true;
+                
+                // Mostra il messaggio mentre si tiene il lock
                 pthread_mutex_lock(&state->screen_mutex);
                 mvprintw(LINES/2, COLS/2-10, "TEMPO SCADUTO!");
+                mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
                 refresh();
                 pthread_mutex_unlock(&state->screen_mutex);
+                
+                // Rilascia il mutex prima di bloccare il thread
+                pthread_mutex_unlock(&state->game_mutex);
+                
+                // Pausa breve per mostrare il messaggio
                 napms(2000);
-                state->game_over = true;
+                
+                // Esci immediatamente dal ciclo
+                break;
             }
             pthread_mutex_unlock(&state->game_mutex);
         }
