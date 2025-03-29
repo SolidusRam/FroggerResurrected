@@ -131,6 +131,14 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                             }
                         }
                     }
+
+                    // Svuota le pipe per evitare l'accumulo di posizioni obsolete
+                    char buffer[1024];
+                    fcntl(pipein, F_SETFL, O_NONBLOCK);
+                    while (read(pipein, buffer, sizeof(buffer)) > 0) {
+                        // Svuota il buffer
+                    }
+                    fcntl(pipein, F_SETFL, 0); // Ripristina modalità bloccante
                     
                 }
             }
