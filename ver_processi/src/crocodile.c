@@ -87,7 +87,21 @@ void coccodrillo(int pipeout,int id){
 
 }
 
- void handle_border_collision(struct position *p, int *original_width) {
+
+/**
+ * Gestisce la collisione del coccodrillo con i bordi dello schermo.
+ * 
+ * Quando un coccodrillo raggiunge un bordo, questa funzione:
+ * 1. Sposta leggermente il coccodrillo verso l'interno
+ * 2. Riduce progressivamente la larghezza del coccodrillo (effetto restringimento)
+ * 3. Quando la larghezza diventa zero o negativa:
+ *    - Ripristina la larghezza originale
+ *    - Teletrasporta il coccodrillo sul lato opposto dello schermo
+ * 
+ * @param p Puntatore alla struttura di posizione del coccodrillo
+ * @param original_width Puntatore alla larghezza originale del coccodrillo
+ */
+void handle_border_collision(struct position *p, int *original_width) {
     if (p->x <= 1) {
         p->x = 2;
         p->width = p->width - 1;

@@ -17,6 +17,7 @@ int main(){
 
     int pipefd[2];  //il campo 0 è per la lettura, il campo 1 è per la scrittura
     int pipeToFrog[2]; //pipe Game -> Player
+    int pausePipe[2]; //pipe Player -> Game
 
     int pid_rana;
     int pid_coccodrilli[MAX_CROCODILES];
@@ -66,7 +67,7 @@ int main(){
 
     //creazione dei processi e pipe
     //la rana si muove con le frecce e deve raggiungere il la parte alta dello schermo
-    if (pipe(pipefd) == -1 || pipe(pipeToFrog) == -1){
+    if (pipe(pipefd) == -1 || pipe(pipeToFrog) == -1 || pipe(pausePipe) == -1) {
         perror("Errore nella creazione della pipe!\n");
         _exit(1);
     }
@@ -75,7 +76,8 @@ int main(){
     if((pid_rana = fork()) == 0){
         close(pipefd[0]);
         close(pipeToFrog[1]);
-        rana(pipefd[1],pipeToFrog[0]);
+        close(pausePipe[0]);    // Chiude lettura pipe pausa
+        rana(pipefd[1],pipeToFrog[0],pausePipe[1]);
     }else if(pid_rana == -1){
         perror("Errore nella creazione del processo rana!\n");
         _exit(1);
@@ -94,8 +96,9 @@ int main(){
     }
 
     close(pipefd[1]);          // Chiude scrittura pipe principale
-    close(pipeToFrog[0]);      // Chiude lettura pipe rana        
-    game(pipefd[0], pipeToFrog[1],num_coccodrilli,&vite);
+    close(pipeToFrog[0]);      // Chiude lettura pipe rana   
+    close(pausePipe[1]);      // Chiude scrittura pipe pausa     
+    game(pipefd[0], pipeToFrog[1],num_coccodrilli,&vite,pausePipe[0]);
 
     printf("DEBUG: Game ended, starting cleanup\n");
     fflush(stdout);
@@ -130,6 +133,8 @@ int main(){
     close(pipefd[1]);
     close(pipeToFrog[0]);
     close(pipeToFrog[1]);
+    close(pausePipe[0]);
+    close(pausePipe[1]);
     
     printf("DEBUG: Cleanup complete, ending game\n");
     fflush(stdout);

@@ -1,7 +1,7 @@
 #include "player.h"
 #include <fcntl.h>
 
-void rana(int pipeout,int pipein)
+void rana(int pipeout,int pipein,int pausepipe)
 {
     struct position p;
     p.c = '$';
@@ -25,7 +25,14 @@ void rana(int pipeout,int pipein)
         }
 
         int ch = getch();
-
+        
+        if (ch == 'p' || ch == 'P') {
+            // Invia comando di pausa (1 byte è sufficiente)
+            char pause_cmd = 'p';
+            write(pausepipe, &pause_cmd, sizeof(char));
+            continue;  // Salta il resto del ciclo
+        }
+        
         switch (ch)
         {
         case KEY_UP:
@@ -69,8 +76,9 @@ void rana(int pipeout,int pipein)
                 p.x = GAME_WIDTH/2;
                 p.y = 2;
                 break;
-
         }
+
+
 
         //svuoto il buffer di input
         while ((ch = getch()) != ERR);

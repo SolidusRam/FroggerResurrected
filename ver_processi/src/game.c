@@ -23,7 +23,7 @@ char crocodile_sprite_dx[2][15] = {
 };
 
 
-void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
+void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 {
     struct position p;
     srand(time(NULL));
@@ -37,6 +37,10 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
     int max_height_reached = GAME_HEIGHT-2; // Initialize to starting position
 
     bool game_over = false;
+    
+    // Imposta il file descriptor pausepipe come non bloccante
+    fcntl(pausepipe, F_SETFL, O_NONBLOCK);
+    bool pause = false;
 
     //Inzializzazione delle variabili per la barra del tempo
     int max_time = 30; //ho messo 30 secondi, se necessario si può incrementare
@@ -76,7 +80,41 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite)
     
     while (!game_over && *vite>0)
     {
-      time_t current_time = time(NULL);
+        time_t current_time = time(NULL);
+
+
+        // Controlla se è arrivato un comando di pausa
+        char pause_cmd;
+        if (read(pausepipe, &pause_cmd, sizeof(char)) > 0) {
+            if (pause_cmd == 'p') {
+                pause = !pause;
+                
+                if (pause) {
+                    // Mostra messaggio di pausa
+                    mvprintw(LINES/2, COLS/2-10, "GIOCO IN PAUSA");
+                    mvprintw(LINES/2+1, COLS/2-15, "Premi 'p' per continuare");
+                    refresh();
+                } else {
+                    // Aggiorna il tempo per evitare salti
+                    last_update = time(NULL);
+
+                    // Cancella messaggio di pausa
+                    mvprintw(LINES/2, COLS/2-10, "                ");
+                    mvprintw(LINES/2+1, COLS/2-15, "                       ");
+                    refresh();
+                    
+                }
+            }
+        }
+
+        // Se il gioco è in pausa, non fare nulla e controlla solo per comandi di pausa
+        if (pause) {
+            // Non leggere dalle altre pipe
+            // Non aggiornare la posizione
+            // Non fare collision detection
+            usleep(50000);  // Attesa breve per non consumare troppa CPU
+            continue;
+        }
       
         ssize_t r = read(pipein, &p, sizeof(struct position));
         if (r <= 0) {
