@@ -17,7 +17,7 @@ void coccodrillo(int pipeout,int id){
     p.width = (rand() % 2 +2) *5;
     original_width = p.width;
     p.height = 2;
-
+    p.pid = getpid();
     //divido i coccodrilli in corsie
     int lane = (id/2) % LANES;
 

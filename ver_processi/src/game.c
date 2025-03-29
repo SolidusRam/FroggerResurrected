@@ -94,14 +94,43 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     mvprintw(LINES/2, COLS/2-10, "GIOCO IN PAUSA");
                     mvprintw(LINES/2+1, COLS/2-15, "Premi 'p' per continuare");
                     refresh();
+
+                    // Invia SIGSTOP a tutti i processi coccodrillo
+                    for (int i = 0; i < num_coccodrilli; i++) {
+                        kill(crocodile_positions[i].pid, SIGSTOP);
+                    }
+                     // Invia SIGSTOP a tutti i processi proiettile attivi
+                    for (int i = 0; i < MAX_BULLETS; i++) {
+                        if (bullets[i].active && bullets[i].pid > 0) {
+                            // Verifica che il processo sia ancora vivo
+                            if (kill(bullets[i].pid, 0) != -1) {
+                                kill(bullets[i].pid, SIGSTOP);
+                            }
+                        }
+                    }
                 } else {
                     // Aggiorna il tempo per evitare salti
                     last_update = time(NULL);
 
                     // Cancella messaggio di pausa
-                    mvprintw(LINES/2, COLS/2-10, "                ");
-                    mvprintw(LINES/2+1, COLS/2-15, "                       ");
+                    mvprintw(LINES/2, COLS/2-10, "                 ");
+                    mvprintw(LINES/2+1, COLS/2-15, "                        ");
                     refresh();
+
+                    // Invia SIGCONT a tutti i processi coccodrillo
+                    for (int i = 0; i < num_coccodrilli; i++) {
+                        kill(crocodile_positions[i].pid, SIGCONT);
+                    }
+
+                    // Invia SIGCONT a tutti i processi proiettile attivi
+                    for (int i = 0; i < MAX_BULLETS; i++) {
+                        if (bullets[i].active && bullets[i].pid > 0) {
+                            // Verifica che il processo sia ancora vivo
+                            if (kill(bullets[i].pid, 0) != -1) {
+                                kill(bullets[i].pid, SIGCONT);
+                            }
+                        }
+                    }
                     
                 }
             }
