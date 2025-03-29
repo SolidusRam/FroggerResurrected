@@ -399,37 +399,46 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
             }
         }
 
-      // Se è passato un secondo, aggiorna il tempo rimanente
+        // Se è passato un secondo, aggiorna il tempo rimanente
 
-    if (current_time - last_update >= 1) {
+        if (current_time - last_update >= 1) {
 
-       //aggiorna le variabili che gestiscono il tempo
-        last_update = current_time;
-        remaining_time--;
+        //aggiorna le variabili che gestiscono il tempo
+            last_update = current_time;
+            remaining_time--;
 
-        // Disegna la barra del tempo
-        draw_time_bar(remaining_time, max_time);
+            // Disegna la barra del tempo
+            draw_time_bar(remaining_time, max_time);
 
-        // Controlla se il tempo è finito
-        if (remaining_time <= 0) {
-            mvprintw(LINES / 2, COLS / 2 - 10, "TEMPO SCADUTO!");
-            refresh();
-            napms(2000);
-            game_over = true;
+            // Controlla se il tempo è finito
+            if (remaining_time <= 0) {
+                mvprintw(LINES / 2, COLS / 2 - 10, "TEMPO SCADUTO!");
+                refresh();
+                napms(2000);
+                game_over = true;
+            }
         }
-    }
 
         // Draw river borders after clearing 
         draw_river_borders();
         draw_game_borders();
         draw_dens(tane);
+
+
         //disegno i coccodrilli utilizzando lo sprite
 
+        //disegno i coccodrilli utilizzando lo sprite
         attron(COLOR_PAIR(2));
         for (int i = 0; i < num_coccodrilli; i++) {
+            // Determina la direzione dal lane ID
+            int lane = (crocodile_positions[i].id/2) % LANES;
+            int direction = (lane % 2 == 0) ? 1 : -1; // Stessa logica di coccodrillo()
+            
             for (int h = 0; h < crocodile_positions[i].height; h++) {
-                for (int w = 0; w < crocodile_positions[i].width; w++) {
-                    if (crocodile_positions[i].x == 1) {
+                for (int w = 0; w < crocodile_positions[i].width && w < 15; w++) {
+                    // Se direction è 1 (destra), usa crocodile_sprite_dx
+                    // Se direction è -1 (sinistra), usa crocodile_sprite_sx
+                    if (direction > 0) {
                         mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_dx[h][w]);
                     } else {
                         mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_sx[h][w]);
