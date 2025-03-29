@@ -3,13 +3,14 @@
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "../include/game.h"
 #include "../include/player.h"
 #include "../include/crocodile.h"
-
-
-
+#include "../include/utils.h"
 
 int main(){
 

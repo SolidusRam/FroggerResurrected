@@ -1,6 +1,7 @@
 #include "../include/crocodile.h"
-
+#include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
 /*I coccodrilli si dividono in corsie in base al loro id */
 

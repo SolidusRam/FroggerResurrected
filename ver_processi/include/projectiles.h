@@ -2,7 +2,9 @@
 #define PROJECTILES_H
 
 #include "game.h"
-
+#include <stdlib.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 /*
     * Funzione che gestisce il processo proiettile 

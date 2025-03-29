@@ -1,5 +1,6 @@
 #include "../include/utils.h"
 
+
 void draw_score(int score) {
     
     int x_start = COLS - 12; 
@@ -142,4 +143,65 @@ bool check_den_collision(struct position *rana_pos, struct tana tane[]) {
         }
     }
     return false;
+}
+
+// Entity management functions
+void clear_entities(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, struct position bullets[], int max_bullets) {
+    // Clear frog
+    clear_frog_position(rana_pos);
+
+    // Clear crocodiles
+    for(int i=0; i < num_coccodrilli; i++) {
+        for (int h = 0; h < crocodile_positions[i].height; h++) {
+            for (int w = 0; w < crocodile_positions[i].width; w++) {
+                mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, ' ');
+            }
+        }
+    }
+
+    // Clear bullets
+    for (int i = 0; i < max_bullets; i++) {
+        if(bullets[i].active) {
+            mvaddch(bullets[i].y, bullets[i].x, ' ');
+        }
+    }
+}
+
+void draw_frog(struct position *rana_pos) {
+    attron(COLOR_PAIR(1));
+    for (int i = 0; i < rana_pos->height; i++) {
+        for (int j = 0; j < rana_pos->width; j++) {
+            mvaddch(rana_pos->y + i, rana_pos->x + j, rana_sprite[i][j]);
+        }
+    }
+    attroff(COLOR_PAIR(1));
+}
+
+void draw_crocodiles(struct position crocodile_positions[], int num_coccodrilli) {
+    attron(COLOR_PAIR(2));
+    for (int i = 0; i < num_coccodrilli; i++) {
+        // Determine direction based on lane ID
+        int lane = (crocodile_positions[i].id/2) % LANES;
+        int direction = (lane % 2 == 0) ? 1 : -1;
+        
+        for (int h = 0; h < crocodile_positions[i].height; h++) {
+            for (int w = 0; w < crocodile_positions[i].width && w < 15; w++) {
+                // Choose sprite based on direction
+                if (direction > 0) {
+                    mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_dx[h][w]);
+                } else {
+                    mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_sx[h][w]);
+                }
+            }
+        }
+    }
+    attroff(COLOR_PAIR(2));
+}
+
+void draw_bullets(struct position bullets[], int max_bullets) {
+    for (int i = 0; i < max_bullets; i++) {
+        if (bullets[i].active && !bullets[i].collision) {
+            mvaddch(bullets[i].y, bullets[i].x, bullets[i].c);
+        }
+    }
 }

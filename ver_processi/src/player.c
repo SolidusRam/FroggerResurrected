@@ -1,5 +1,8 @@
-#include "player.h"
+#include "../include/player.h"
+#include "../include/projectiles.h"
+#include <stdlib.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 void rana(int pipeout,int pipein,int pausepipe)
 {

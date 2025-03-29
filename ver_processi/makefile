@@ -10,12 +10,12 @@ BUILD_DIR = build
 SRCS = $(wildcard $(SRC_DIR)/*.c)
 
 # File oggetto
-OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS))
+OBJS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SRCS)) $(BUILD_DIR)/sprites.o
 
 # Compilatore e flags
 CC = gcc
 CFLAGS = -Wall -Wextra -I$(INCLUDE_DIR)
-LDFLAGS = -lncurses
+LDFLAGS = -lncurses -lm
 
 # Regola di default
 all: $(BUILD_DIR) $(TARGET)

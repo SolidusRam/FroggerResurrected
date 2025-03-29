@@ -1,34 +1,26 @@
 #include "../include/game.h"
-
-/*
-  o
-_`O'_
-*/
-
-char rana_sprite[2][5] = {
-    {' ', ' ', 'O', ' ', ' '},
-    {'_', '`', 'O', '\'', '_'}
-};
-
-
-//Sprite per il movimento del coccodrillo verso sinistra o destra
-char crocodile_sprite_sx[2][15] = {
-    {' ', '_', '_', '_', '/', '^', '\\', '_', '_', '_', '_', '_', '_', '_', '_'},
-    {'/', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '='}
-};
-
-char crocodile_sprite_dx[2][15] = {
-    {'_', '_', '_', '_', '_', '_', '_', '/', '^', '\\', '_', '_', '_', '_', ' '},
-    {'=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '=', '\\'}
-};
-
+#include "../include/utils.h"
+#include <stdlib.h>
+#include <time.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <signal.h>
 
 void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 {
     struct position p;
     srand(time(NULL));
     //la rana inizia dal centro dello schermo
-    struct position rana_pos = {'$', GAME_WIDTH-3, GAME_HEIGHT-2, 2, 5};
+    struct position rana_pos = {
+        .c = '$', 
+        .x = GAME_WIDTH-3, 
+        .y = GAME_HEIGHT-2, 
+        .width = 2, 
+        .height = 5,
+        .id = 0
+    };
     struct position crocodile_positions [num_coccodrilli];
     struct position bullets[MAX_BULLETS];
     struct tana tane[NUM_TANE];
@@ -55,17 +47,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
     // Initialize all crocodile positions
     // i coccodrilli si dividono in corsie
     for (int i = 0; i < num_coccodrilli; i++) {
-        int lane = i % LANES;  // Distribute across 8 lanes (0-7)
-        int x = (i % 2 == 0) ? 1 : GAME_WIDTH - 6;  // Alternate starting from left/right
-        
-        // Random width between 3-4 times the frog width (frog width = 5)
-        int width = (rand() % 2 + 3) * 5;  // Will give either 15 or 20 units
-        
-        crocodile_positions[i] = (struct position) {
+            crocodile_positions[i] = (struct position) {
             .c = 'C',
-            .x = x,
-            .y = 4+(lane*LANE_HEIGHT),
-            .width = width,
             .height = 2,  // Keep height same as frog
             .id = i
         };
@@ -153,6 +136,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
             continue;
         }
       
+        // Leggi la posizione dalla pipe
         ssize_t r = read(pipein, &p, sizeof(struct position));
         if (r <= 0) {
             mvprintw(LINES/2, COLS/2-10, "Pipe read error: %s", strerror(errno));
@@ -166,31 +150,8 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         //disegno il numero di vite rimanenti
         mvprintw(LINES-1,GAME_WIDTH-20,"Vite: %d",*vite); //ho riadattato a GAME_WIDTH-20 per avere sia vite che score a schermo
 
+        clear_entities(&rana_pos, crocodile_positions, num_coccodrilli, bullets, MAX_BULLETS);
 
-        // cancello la rana
-
-        clear_frog_position(&rana_pos);
-
-
-        //cancello i coccodrilli
-        for(int i=0; i<num_coccodrilli; i++){
-            for (int h = 0; h < crocodile_positions[i].height; h++) {
-                for (int w = 0; w < crocodile_positions[i].width; w++) {
-                    mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, ' ');
-                }
-            }
-        }
-
-         //cancello i proiettili
-        for (int i = 0; i < MAX_BULLETS; i++)
-        {
-            if(bullets[i].active){
-                mvaddch(bullets[i].y, bullets[i].x, ' ');
-            }
-        }
-
-
-            
         //aggiorno la posizione in base al carattere letto
         if (p.c == '$') {
             int crocodile_direction = 0;
@@ -424,63 +385,16 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         draw_game_borders();
         draw_dens(tane);
 
-
-        //disegno i coccodrilli utilizzando lo sprite
-
-        //disegno i coccodrilli utilizzando lo sprite
-        attron(COLOR_PAIR(2));
-        for (int i = 0; i < num_coccodrilli; i++) {
-            // Determina la direzione dal lane ID
-            int lane = (crocodile_positions[i].id/2) % LANES;
-            int direction = (lane % 2 == 0) ? 1 : -1; // Stessa logica di coccodrillo()
-            
-            for (int h = 0; h < crocodile_positions[i].height; h++) {
-                for (int w = 0; w < crocodile_positions[i].width && w < 15; w++) {
-                    // Se direction è 1 (destra), usa crocodile_sprite_dx
-                    // Se direction è -1 (sinistra), usa crocodile_sprite_sx
-                    if (direction > 0) {
-                        mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_dx[h][w]);
-                    } else {
-                        mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_sx[h][w]);
-                    }
-                }
-            }
-        }
-        attroff(COLOR_PAIR(2));
+        //disegno i coccodrilli
+        draw_crocodiles(crocodile_positions, num_coccodrilli);
         
 
         //disegno i proiettili
-        for (int i = 0; i < MAX_BULLETS; i++) {
-            if (bullets[i].active) {
-                // Prima cancelliamo il proiettile vecchio
-                mvaddch(bullets[i].y, bullets[i].x, ' ');
-                
-                // Controlliamo le collisioni con i muri
-                if(bullets[i].x <= 0 || bullets[i].x >= COLS-1) {
-                    kill(bullets[i].pid,SIGTERM);
-                    waitpid(bullets[i].pid, NULL ); 
-                    bullets[i].active = 0;
-                    bullets[i].pid = 0;  // Reset del PID
-                    continue;
-                }
+        void draw_bullets(struct position bullets[], int max_bullets);
 
-                // Aggiorna la posizione solo se il proiettile è ancora attivo
-                if(bullets[i].active && !bullets[i].collision){
-                    mvaddch(bullets[i].y, bullets[i].x, bullets[i].c);
-                }
-            }
-        }
         //disegno la rana
 
-        attron(COLOR_PAIR(1));
-        for (int i = 0; i < rana_pos.height; i++)
-        {
-            for (int j = 0; j < rana_pos.width; j++)
-            {
-                mvaddch(rana_pos.y + i, rana_pos.x + j, rana_sprite[i][j]);
-            }
-        }
-        attroff(COLOR_PAIR(1));
+        draw_frog(&rana_pos);
         refresh();
     }
 }
