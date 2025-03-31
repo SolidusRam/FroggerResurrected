@@ -128,6 +128,7 @@ bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int nu
 bool frog_on_the_water(position* rana_pos);
 bool check_den_collision(position* rana_pos, tana* tane, int num_tane);
 int find_free_bullet_slot(game_state* state);
+void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy);
 
 // Initialize and cleanup functions
 void init_game_state(game_state* state);

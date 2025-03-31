@@ -79,3 +79,35 @@ void* bullet_thread(void* arg) {
     free(arg);
     return NULL;
 }
+
+void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy) {
+    pthread_mutex_lock(&state->game_mutex);
+    
+    int bullet_idx = find_free_bullet_slot(state);
+    if (bullet_idx >= 0) {
+        pthread_mutex_lock(&state->bullets[bullet_idx].pos.mutex);
+        
+        // Set bullet properties
+        state->bullets[bullet_idx].pos.c = is_enemy ? '@' : '*';
+        state->bullets[bullet_idx].pos.x = x;
+        state->bullets[bullet_idx].pos.y = y;
+        state->bullets[bullet_idx].pos.width = 1;
+        state->bullets[bullet_idx].pos.height = 1;
+        state->bullets[bullet_idx].pos.active = true;
+        state->bullets[bullet_idx].pos.collision = false;
+        state->bullets[bullet_idx].direction = direction;
+        state->bullets[bullet_idx].is_enemy = is_enemy;
+        
+        pthread_mutex_unlock(&state->bullets[bullet_idx].pos.mutex);
+        
+        // Create thread arguments
+        bullet_args* args = malloc(sizeof(bullet_args));
+        args->state = state;
+        args->bullet_id = bullet_idx;
+        
+        // Create thread for bullet
+        pthread_create(&state->bullets[bullet_idx].thread_id, NULL, bullet_thread, args);
+    }
+    
+    pthread_mutex_unlock(&state->game_mutex);
+}

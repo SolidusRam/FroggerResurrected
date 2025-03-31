@@ -74,59 +74,23 @@ void* player_thread(void* arg) {
                 break;
             case ' ': // Spacebar for shooting
                 // Create bullets (left and right)
-                pthread_mutex_lock(&state->game_mutex);
+                // Create left bullet
+                create_bullet(
+                    state, 
+                    state->player.x - 1,       // x position
+                    state->player.y,           // y position
+                    -1,                        // direction (left)
+                    false                      // not an enemy bullet
+                );
                 
-                // Left bullet
-                int left_idx = find_free_bullet_slot(state);
-                if (left_idx >= 0) {
-                    pthread_mutex_lock(&state->bullets[left_idx].pos.mutex);
-                    state->bullets[left_idx].pos.c = '*';
-                    state->bullets[left_idx].pos.x = state->player.x - 1;
-                    state->bullets[left_idx].pos.y = state->player.y;
-                    state->bullets[left_idx].pos.width = 1;
-                    state->bullets[left_idx].pos.height = 1;
-                    state->bullets[left_idx].pos.active = true;
-                    state->bullets[left_idx].pos.collision = false;
-                    state->bullets[left_idx].direction = -1;
-                    state->bullets[left_idx].is_enemy = false;
-                    pthread_mutex_unlock(&state->bullets[left_idx].pos.mutex);
-                    
-                    // Create thread arguments
-                    bullet_args* left_args = malloc(sizeof(bullet_args));
-                    left_args->state = state;
-                    left_args->bullet_id = left_idx;
-                    
-                    // Create thread for bullet
-                    pthread_create(&state->bullets[left_idx].thread_id, NULL, 
-                                  bullet_thread, left_args);
-                }
-                
-                // Right bullet
-                int right_idx = find_free_bullet_slot(state);
-                if (right_idx >= 0) {
-                    pthread_mutex_lock(&state->bullets[right_idx].pos.mutex);
-                    state->bullets[right_idx].pos.c = '*';
-                    state->bullets[right_idx].pos.x = state->player.x + state->player.width;
-                    state->bullets[right_idx].pos.y = state->player.y;
-                    state->bullets[right_idx].pos.width = 1;
-                    state->bullets[right_idx].pos.height = 1;
-                    state->bullets[right_idx].pos.active = true;
-                    state->bullets[right_idx].pos.collision = false;
-                    state->bullets[right_idx].direction = 1;
-                    state->bullets[right_idx].is_enemy = false;
-                    pthread_mutex_unlock(&state->bullets[right_idx].pos.mutex);
-                    
-                    // Create thread arguments
-                    bullet_args* right_args = malloc(sizeof(bullet_args));
-                    right_args->state = state;
-                    right_args->bullet_id = right_idx;
-                    
-                    // Create thread for bullet
-                    pthread_create(&state->bullets[right_idx].thread_id, NULL, 
-                                  bullet_thread, right_args);
-                }
-                
-                pthread_mutex_unlock(&state->game_mutex);
+                // Create right bullet
+                create_bullet(
+                    state, 
+                    state->player.x + state->player.width, // x position
+                    state->player.y,                       // y position
+                    1,                                     // direction (right)
+                    false                                  // not an enemy bullet
+                );
                 break;
                 
             case 'q':  // Cheat code (for testing)
