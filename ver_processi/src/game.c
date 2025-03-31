@@ -220,37 +220,37 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 }
             }
         }else if(p.c == '@' || p.c == '*'){
-            // Prima cerchiamo se esiste già un proiettile con lo stesso pid
             int found = 0;
-
-            // Prima rimuovi i proiettili inattivi o morti
+            
+            // First, check for inactive bullets and clean them up
             for (int i = 0; i < MAX_BULLETS; i++) {
                 if (bullets[i].active) {
-                    // Verifica se il processo è ancora vivo
-                    if (kill(bullets[i].pid, 0) == -1) {
+                    // Check if process is still alive
+                    if (kill(bullets[i].pid, 0) == -1 && errno == ESRCH) {
+                        // Process doesn't exist anymore, mark bullet inactive
                         bullets[i].active = 0;
-                        bullets[i].pid = 0;
                     }
                 }
             }
+            
+            // Then process the current bullet
             for (int i = 0; i < MAX_BULLETS; i++) {
-                if (bullets[i].active && bullets[i].pid == p.pid) {\
+                if (bullets[i].active && bullets[i].pid == p.pid) {
                     int was_collided = bullets[i].collision;
                     bullets[i].x = p.x;
                     bullets[i].y = p.y;
-                    bullets[i].collision = was_collided;
+                    bullets[i].active = p.active;  // Update active status from the message
+                    bullets[i].collision = was_collided || p.collision;
                     found = 1;
                     break;
                 }
             }
             
-            // Se non trovato, cerchiamo uno slot libero
-            if (!found) {
+            // If not found and still active, find an empty slot
+            if (!found && p.active) {
                 for (int i = 0; i < MAX_BULLETS; i++) {
                     if (!bullets[i].active) {
                         bullets[i] = p;
-                        bullets[i].active = 1;
-                        bullets[i].collision = 0;
                         break;
                     }
                 }
@@ -390,8 +390,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         
 
         //disegno i proiettili
-        void draw_bullets(struct position bullets[], int max_bullets);
-
+        draw_bullets(bullets);
         //disegno la rana
 
         draw_frog(&rana_pos);

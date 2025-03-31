@@ -20,6 +20,6 @@ void clear_entities(struct position *rana_pos, struct position crocodile_positio
                    int num_coccodrilli, struct position bullets[], int max_bullets);
 void draw_frog(struct position *rana_pos);
 void draw_crocodiles(struct position crocodile_positions[], int num_coccodrilli);
-void draw_bullets(struct position bullets[], int max_bullets);
+void draw_bullets(struct position bullets[]);
 
 #endif // UTILS_H

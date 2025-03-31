@@ -30,7 +30,7 @@ void rana(int pipeout,int pipein,int pausepipe)
         int ch = getch();
         
         if (ch == 'p' || ch == 'P') {
-            // Invia comando di pausa (1 byte è sufficiente)
+            // Invia il comando di pausa (1 byte è sufficiente)
             char pause_cmd = 'p';
             write(pausepipe, &pause_cmd, sizeof(char));
             continue;  // Salta il resto del ciclo

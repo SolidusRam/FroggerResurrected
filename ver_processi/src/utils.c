@@ -198,8 +198,8 @@ void draw_crocodiles(struct position crocodile_positions[], int num_coccodrilli)
     attroff(COLOR_PAIR(2));
 }
 
-void draw_bullets(struct position bullets[], int max_bullets) {
-    for (int i = 0; i < max_bullets; i++) {
+void draw_bullets(struct position bullets[]) {
+    for (int i = 0; i < MAX_BULLETS; i++) {
         if (bullets[i].active && !bullets[i].collision) {
             mvaddch(bullets[i].y, bullets[i].x, bullets[i].c);
         }
