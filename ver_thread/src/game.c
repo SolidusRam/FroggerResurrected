@@ -9,6 +9,48 @@ char rana_sprite[2][5] = {
     {'_', '`', 'O', '\'', '_'}
 };
 
+void reset_player_safely(game_state* state) {
+    // STEP 1: Reset flags (no mutex required yet)
+    state->player_on_crocodile = false;
+    state->player_crocodile_id = -1;
+    
+    // STEP 2: Create reset position first (no locks needed)
+    position new_pos;
+    new_pos.c = '$';  // Use known player character
+    new_pos.x = GAME_WIDTH/2;
+    new_pos.y = GAME_HEIGHT-2;
+    new_pos.width = 5;  // Assuming standard width
+    new_pos.height = 2;  // Assuming standard height
+    new_pos.id = 0;
+    new_pos.active = true;
+    new_pos.collision = false;
+    
+    // STEP 3: Lock player mutex - keeping scope minimal
+    pthread_mutex_lock(&state->player.mutex);
+    // Update player position
+    state->player.x = GAME_WIDTH/2;
+    state->player.y = GAME_HEIGHT-2;
+    state->player.active = true;
+    state->player.collision = false;
+    // Copy values for message
+    new_pos = state->player;  // Copy all fields including c, width, height
+    pthread_mutex_unlock(&state->player.mutex);
+    
+    // STEP 4: Create reset message with new position
+    game_message reset_msg;
+    reset_msg.type = MSG_PLAYER;
+    reset_msg.id = 0;
+    reset_msg.pos = new_pos;  // Using our safe copy
+    
+    // STEP 5: Send message (no mutex held)
+    buffer_put(&state->event_buffer, &reset_msg);
+    
+    // STEP 6: Reset timer (using proper lock scope)
+    pthread_mutex_lock(&state->game_mutex);
+    state->remaining_time = state->max_time;
+    pthread_mutex_unlock(&state->game_mutex);
+}
+
 // Initialize the game state
 void init_game_state(game_state* state) {
     // Initialize mutex and condition variables
@@ -179,65 +221,32 @@ void* game_thread(void* arg) {
         // Player fell in water check
         if (!state->player_on_crocodile && frog_on_the_water(&player_copy)) {
             pthread_mutex_lock(&state->game_mutex);
-            state->score = 0;
             state->vite--;
             max_height_reached = GAME_HEIGHT-2;
             
             if (state->vite > 0) {
-                // Show message first without holding player mutex
+                // Show message first
                 pthread_mutex_lock(&state->screen_mutex);
-                mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
+                mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA! Vite: %d", state->vite);
                 refresh();
                 pthread_mutex_unlock(&state->screen_mutex);
                 
-                // CRITICAL: Unlock game_mutex before proceeding
+                // CRITICAL: Unlock game_mutex before proceeding with player updates
                 pthread_mutex_unlock(&state->game_mutex);
                 
-                // STEP 1: Reset flags
-                state->player_on_crocodile = false;
-                state->player_crocodile_id = -1;
+                // Use our safe reset function instead of inline code
+                reset_player_safely(state);
                 
-                // STEP 2: Create new position - we'll update in player_thread using messages
-                position new_pos;
-                new_pos.c = '$';
-                new_pos.x = GAME_WIDTH/2;
-                new_pos.y = GAME_HEIGHT-2;
-                new_pos.width = state->player.width;
-                new_pos.height = state->player.height;
-                new_pos.id = 0;
-                new_pos.active = true;
-                new_pos.collision = false;
-                
-                // STEP 3: Lock player position for updates
-                pthread_mutex_lock(&state->player.mutex);
-                state->player.x = GAME_WIDTH/2;
-                state->player.y = GAME_HEIGHT-2;
-                state->player.active = true;
-                state->player.collision = false;
-                pthread_mutex_unlock(&state->player.mutex);
-                
-                // STEP 4: Create reset message
-                game_message reset_msg;
-                reset_msg.type = MSG_PLAYER;
-                reset_msg.id = 0;
-                reset_msg.pos = new_pos;  // Use our copy
-                
-                // STEP 5: Send message to buffer
-                buffer_put(&state->event_buffer, &reset_msg);
-                
-                // STEP 6: Update timer
-                pthread_mutex_lock(&state->game_mutex);
-                state->remaining_time = state->max_time;
-                pthread_mutex_unlock(&state->game_mutex);
-                
-                // STEP 7: Small delay to allow message processing
-                napms(1000);
+                // Safe delay with no locks held
+                napms(500);
             } else {
-                // Game over
+                // Game over handling (unchanged)
                 pthread_mutex_lock(&state->screen_mutex);
                 mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
                 refresh();
                 pthread_mutex_unlock(&state->screen_mutex);
+                
                 state->game_over = true;
                 pthread_mutex_unlock(&state->game_mutex);
                 napms(2000);
@@ -309,60 +318,45 @@ void* game_thread(void* arg) {
             
             // Handle the case where player reached top row but not a valid den
             if (!den_reached) {
-                pthread_mutex_lock(&state->game_mutex);
+                // Resettiamo posizione e statistiche
+                state->player_on_crocodile = false;
+                state->player_crocodile_id = -1;
                 state->score = 0;
                 state->vite--;
                 max_height_reached = GAME_HEIGHT-2;
                 
                 if (state->vite > 0) {
-                    // Show message first
+                    // Mostriamo il messaggio (manteniamo player mutex)
                     pthread_mutex_lock(&state->screen_mutex);
                     mvprintw(LINES/2, COLS/2-10, "TANA NON VALIDA!");
                     refresh();
                     pthread_mutex_unlock(&state->screen_mutex);
                     
-                    // CRITICAL: Unlock game_mutex before proceeding with player updates
-                    pthread_mutex_unlock(&state->game_mutex);
-                    
-                    // STEP 1: Reset flags (player mutex not yet locked)
-                    state->player_on_crocodile = false;
-                    state->player_crocodile_id = -1;
-                    
-                    // STEP 2: Create new position - we'll update later
-                    position new_pos;
-                    new_pos.c = state->player.c;
-                    new_pos.x = GAME_WIDTH/2;
-                    new_pos.y = GAME_HEIGHT-2;
-                    new_pos.width = state->player.width;
-                    new_pos.height = state->player.height;
-                    new_pos.id = state->player.id;
-                    new_pos.active = true;
-                    new_pos.collision = false;
-                    
-                    // STEP 3: Update player position (using the current player_mutex lock)
+                    // Resettiamo la posizione della rana (già abbiamo il mutex player)
                     state->player.x = GAME_WIDTH/2;
                     state->player.y = GAME_HEIGHT-2;
                     state->player.active = true;
                     state->player.collision = false;
                     
-                    // STEP 4: Create reset message
+                    // Creiamo messaggio di reset
                     game_message reset_msg;
                     reset_msg.type = MSG_PLAYER;
                     reset_msg.id = 0;
-                    reset_msg.pos = new_pos;  // Use our copy to avoid mutex issues
+                    reset_msg.pos = state->player;
                     
-                    // STEP 5: Put message in buffer
-                    buffer_put(&state->event_buffer, &reset_msg);
-                    
-                    // STEP 6: Update timer
+                    // Aggiorniamo il timer
                     pthread_mutex_lock(&state->game_mutex);
                     state->remaining_time = state->max_time;
                     pthread_mutex_unlock(&state->game_mutex);
                     
-                    // STEP 7: Small delay for message processing
+                    // Mettiamo il messaggio nel buffer (ancora con player mutex)
+                    buffer_put(&state->event_buffer, &reset_msg);
+                    
+                    // Piccolo ritardo per il messaggio
                     napms(1000);
                 } else {
                     // Game over
+                    pthread_mutex_lock(&state->game_mutex);
                     pthread_mutex_lock(&state->screen_mutex);
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                     mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
@@ -418,7 +412,6 @@ void* game_thread(void* arg) {
                 
                 if (hit) {
                     pthread_mutex_lock(&state->game_mutex);
-                    state->score = 0;
                     state->vite--;
                     max_height_reached = GAME_HEIGHT-2;
                     
@@ -433,43 +426,16 @@ void* game_thread(void* arg) {
                         refresh();
                         pthread_mutex_unlock(&state->screen_mutex);
                         
-                        // CRITICAL FIX: Unlock game_mutex before locking player_mutex
+                        // CRITICAL: Unlock game_mutex before proceeding with player updates
                         pthread_mutex_unlock(&state->game_mutex);
                         
-                        // STEP 1: Reset flags
-                        state->player_on_crocodile = false;
-                        state->player_crocodile_id = -1;
+                        // Use our safe reset function
+                        reset_player_safely(state);
                         
-                        // STEP 2: Lock player position for updates
-                        pthread_mutex_lock(&state->player.mutex);
-                        
-                        // STEP 3: Reset position
-                        state->player.x = GAME_WIDTH/2;
-                        state->player.y = GAME_HEIGHT-2;
-                        state->player.active = true;
-                        state->player.collision = false;
-                        
-                        // Create reset message
-                        game_message reset_msg;
-                        reset_msg.type = MSG_PLAYER;
-                        reset_msg.id = 0;
-                        reset_msg.pos = state->player;
-                        
-                        // Unlock player mutex
-                        pthread_mutex_unlock(&state->player.mutex);
-                        
-                        // STEP 4: Put message in buffer to notify player thread
-                        buffer_put(&state->event_buffer, &reset_msg);
-                        
-                        // STEP 5: Update timer
-                        pthread_mutex_lock(&state->game_mutex);
-                        state->remaining_time = state->max_time;
-                        pthread_mutex_unlock(&state->game_mutex);
-                        
-                        // STEP 6: Small delay for message processing
-                        napms(1000);
+                        // Safe delay with no locks held
+                        napms(500);
                     } else {
-                        // Game over
+                        // Game over handling stays the same
                         pthread_mutex_lock(&state->screen_mutex);
                         mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                         mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
