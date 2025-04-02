@@ -3,8 +3,8 @@
 #include <time.h>
 #include <stdlib.h>
 
-// Velocità di movimento del coccodrillo in microsecondi (300000 = 0.3 secondi)
-#define CROCODILE_SPEED 300000
+// Replacing fixed speed with lane-based speeds
+// #define CROCODILE_SPEED 300000
 
 void* crocodile_thread(void* arg) {
     crocodile_args* args = (crocodile_args*)arg;
@@ -20,6 +20,28 @@ void* crocodile_thread(void* arg) {
     
     // Seed random number generator uniquely for this thread
     srand(time(NULL) ^ id);
+    
+    // Calculate speed based on lane - lower values = faster movement
+    int speed;
+    switch(lane % 4) {
+        case 0:
+            speed = 250000; // lane 0, 4, 8 - medium speed
+            break;
+        case 1:
+            speed = 300000; // lane 1, 5, 9 - slow speed
+            break;
+        case 2:
+            speed = 180000; // lane 2, 6, 10 - fast speed
+            break;
+        case 3:
+            speed = 220000; // lane 3, 7, 11 - medium-fast speed
+            break;
+        default:
+            speed = 250000; // fallback
+    }
+    
+    // Add some random variation to the speed (±10%)
+    speed = speed * (90 + rand() % 21) / 100;
     
     while (!state->game_over) {
         // Check if game is paused
@@ -131,8 +153,8 @@ void* crocodile_thread(void* arg) {
         
         pthread_mutex_unlock(&state->crocodiles[id].mutex);
         
-        // Sleep to control movement speed (slower than player)
-        usleep(CROCODILE_SPEED);
+        // Sleep to control movement speed (using variable speed instead of fixed CROCODILE_SPEED)
+        usleep(speed);
     }
     
     // Free allocated memory for arguments
