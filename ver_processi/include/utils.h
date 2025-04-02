@@ -21,5 +21,6 @@ void clear_entities(struct position *rana_pos, struct position crocodile_positio
 void draw_frog(struct position *rana_pos);
 void draw_crocodiles(struct position crocodile_positions[], int num_coccodrilli);
 void draw_bullets(struct position bullets[]);
+bool is_invalid_top_area(struct position *rana_pos, struct tana tane[]);
 
 #endif // UTILS_H

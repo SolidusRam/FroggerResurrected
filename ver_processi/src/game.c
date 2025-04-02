@@ -259,7 +259,36 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
         if (rana_pos.y <= 1) { 
-            if(check_den_collision(&rana_pos, tane)) {
+            if (is_invalid_top_area(&rana_pos, tane)) {
+                // Rana tried to enter an occupied den or an invalid top area
+                (*vite)--;
+                max_height_reached = GAME_HEIGHT-2; // Reset max height
+                
+                if (*vite > 0) {
+                    // Display message
+                    mvprintw(LINES/2, COLS/2-15, "AREA NON DISPONIBILE!");
+                    refresh();
+                    
+                    // Reset frog position
+                    rana_pos.x = GAME_WIDTH/2;
+                    rana_pos.y = GAME_HEIGHT-2;
+                    write(pipeToFrog, &rana_pos, sizeof(struct position));
+                    
+                    // Reset timer
+                    remaining_time = max_time;
+                    napms(2000);
+                    
+                    continue;
+                } else {
+                    game_over = true;
+                    mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                    mvprintw((LINES/2)+1, COLS/2-15, "SCORE FINALE: %d", score);
+                    refresh();
+                    napms(2000);
+                    break;
+                }
+            }
+            else if(check_den_collision(&rana_pos, tane)) {
                 score+=100;
                 tane_occupate++;
                 //reset del timer

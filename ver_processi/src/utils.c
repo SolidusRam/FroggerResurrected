@@ -205,3 +205,25 @@ void draw_bullets(struct position bullets[]) {
         }
     }
 }
+
+
+// Add this new function to check if the frog is trying to enter an invalid area
+bool is_invalid_top_area(struct position *rana_pos, struct tana tane[]) {
+    // If frog is at the top row
+    if (rana_pos->y <= 1) {
+        // Check if the frog's center is within any unoccupied den
+        int frog_center_x = rana_pos->x + (rana_pos->width / 2);
+        for (int i = 0; i < NUM_TANE; i++) {
+            if (!tane[i].occupata && 
+                frog_center_x >= tane[i].x && 
+                frog_center_x <= tane[i].x + TANA_WIDTH) {
+                // Frog is trying to enter an available den, this is valid
+                return false;
+            }
+        }
+        // Frog is at the top but not in an available den, this is invalid
+        return true;
+    }
+    // Frog is not at the top row
+    return false;
+}
