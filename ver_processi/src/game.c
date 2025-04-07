@@ -49,7 +49,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
     for (int i = 0; i < num_coccodrilli; i++) {
             crocodile_positions[i] = (struct position) {
             .c = 'C',
-            .height = 2,  // Keep height same as frog
+            .height = 2,  // Tiene la stessa altezza della rana
             .id = i
         };
     }
@@ -177,7 +177,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                      //resetta lo score e riduce di 1 le vite
                     score=0;
                     (*vite)--;
-                    max_height_reached = GAME_HEIGHT-2; // Reset max height
+                    max_height_reached = GAME_HEIGHT-2; // Resetta l'altezza MAX
 
                     if (*vite > 0)
                     {
@@ -185,7 +185,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                         mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA!");
                         score=0;
                         refresh();
-                        // Reset only frog position
+                        // resetta la posizione della rana
                         rana_pos.x = GAME_WIDTH/2;
                         rana_pos.y = GAME_HEIGHT-2;
                         write(pipeToFrog, &rana_pos, sizeof(struct position));
@@ -205,14 +205,14 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     }
 
                 }else{
-                    rana_pos = p; // Only update position if not on crocodile 
+                    rana_pos = p; // Aggiorna la posizione se non si è su un coccodrillo
                 }
             }
             // Controlla che la rana non esca dallo schermo
             if (rana_pos.x < 1) rana_pos.x = 1;
             if (rana_pos.x > GAME_WIDTH - rana_pos.width - 1) 
                 rana_pos.x = GAME_WIDTH - rana_pos.width - 1;
-        } else if (p.c == 'C') { // Update crocodile position
+        } else if (p.c == 'C') { // Aggiorna la posizione del coccodrillo
             for (int i = 0; i < num_coccodrilli; i++) {
                 if (crocodile_positions[i].id == p.id) {
                     crocodile_positions[i] = p;
@@ -259,7 +259,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         //controllo la condizione di vittoria, la rana ha raggiunto la fine dello schermo
         if (rana_pos.y <= 1) { 
             if (is_invalid_top_area(&rana_pos, tane)) {
-                // Rana tried to enter an occupied den or an invalid top area
+                // La rana prova ad entrare in una tana occupata o zona off limits
                 (*vite)--;
                 max_height_reached = GAME_HEIGHT-2; // Reset max height
                 
@@ -268,12 +268,12 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     mvprintw(LINES/2, COLS/2-15, "AREA NON DISPONIBILE!");
                     refresh();
                     
-                    // Reset frog position
+                    // Resetta posizione della rana
                     rana_pos.x = GAME_WIDTH/2;
                     rana_pos.y = GAME_HEIGHT-2;
                     write(pipeToFrog, &rana_pos, sizeof(struct position));
                     
-                    // Reset timer
+                    // Resetta il timer
                     remaining_time = max_time;
                     napms(2000);
                     
@@ -338,7 +338,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     // Reset timer
                     remaining_time = max_time;
                     
-                    // Clear collision bullet
+                    // Riprisitina la collsione del proiettile
                     bullets[i].collision = 1;
                     
                     attron(COLOR_PAIR(1));
@@ -352,14 +352,14 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     attroff(COLOR_PAIR(1));
                     refresh();
                     
-                    break; // Exit bullet check loop
+                    break; // Esce dal loop di controllo del proiettile
                 } else {
                     game_over = true;
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                     mvprintw((LINES / 2) + 1, COLS / 2 - 10, "SCORE FINALE: %d", score);
                     refresh();
                     napms(2000);
-                    return; // Exit game function
+                    return; // Esce dalla funzione di gioco
                 }
             }
         }
@@ -403,7 +403,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
             }
         }
 
-        // Draw river borders after clearing 
+        // Disegna i bordi dopo aver ripulito lo schermo
         draw_river_borders();
         draw_game_borders();
         draw_dens(tane);
@@ -423,15 +423,15 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 
 bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction) {
     for (int i = 0; i < num_coccodrilli; i++) {
-        // Check if frog is on crocodile
+        // Controllo se la rana è su un coccodrillo
         if (rana_pos->y == crocodile_positions[i].y && 
             rana_pos->x >= crocodile_positions[i].x && 
             rana_pos->x <= crocodile_positions[i].x + crocodile_positions[i].width - rana_pos->width) {
             
-            // Set the direction based on the crocodile's lane
+            // Setta la direzione in base alla lane del coccodrillo
             int lane = (crocodile_positions[i].id/2) % LANES;
             *direction = (lane % 2 == 0) ? -1 : 1;
-            return true; // Frog is on crocodile
+            return true; // La rana è su un coccdrillo
         }
     }
     return false;
