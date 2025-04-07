@@ -276,8 +276,6 @@ void draw_game_state(game_state* state) {
     
     // Non usiamo clear() qui, fa sfarfallare lo schermo
     
-    // Copy buffer to screen in one operation
-    // prefresh e più efficiente di pnoutrefresh+doupdate perché fa tutto in un'operazione
     prefresh(buffer_win, 0, 0, 0, 0, GAME_HEIGHT-1, GAME_WIDTH-1);
     
     pthread_mutex_unlock(&state->screen_mutex);

@@ -47,19 +47,20 @@ int main() {
     cbreak();
     nodelay(stdscr, TRUE);
     keypad(stdscr, TRUE);
-    curs_set(0);  // Hide cursor
+    curs_set(0);  
     
     // Pulizia iniziale dello schermo per evitare caratteri casuali
     clear();
     box(stdscr, ACS_VLINE, ACS_HLINE);
     refresh();
     
-    // Create and initialize game state
+    // Creazione dello stato di gioco
+    // Inizializzazione dello stato di gioco
     game_state state;
     init_game_state(&state);
-    global_state = &state;  // Set global pointer for signal handler
+    global_state = &state;  
     
-    // Set up signal handlers for clean exit
+    // Segnali di terminazione
     signal(SIGINT, cleanup_handler);
     signal(SIGTERM, cleanup_handler);
     
@@ -85,21 +86,20 @@ int main() {
         pthread_create(&crocodile_tids[i], NULL, crocodile_thread, croc_args[i]);
     }
     
-    // Wait for game thread to finish
+    // CHiusura il thread di gioco
     pthread_join(game_tid, NULL);
     
     // Game over, clean up
     for (int i = 0; i < MAX_CROCODILES; i++) {
-        // Cancel the thread but then join to ensure clean termination
         pthread_cancel(crocodile_tids[i]);
         pthread_join(crocodile_tids[i], NULL);
-        free(croc_args[i]); // Free the argument structures
+        free(croc_args[i]); // pulizia della memoria
     }
     pthread_cancel(player_tid);
     pthread_join(player_tid, NULL);
     
     
-    // Clean up bullets
+    // Clean up proiettili
     for (int i = 0; i < MAX_BULLETS; i++) {
         if (state.bullets[i].pos.active) {
             pthread_cancel(state.bullets[i].thread_id);
@@ -107,11 +107,10 @@ int main() {
         }
     }
     
-    // Clean up resources
+    // Pulizia dello stato di gioco
     destroy_game_state(&state);
     global_state = NULL;
     
-    // Display final message
     clear();
     mvprintw(LINES/2, COLS/2 - 15, "Game Over - Score: %d", state.score);
     refresh();

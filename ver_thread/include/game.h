@@ -19,7 +19,7 @@
 #define TANA_HEIGHT 1
 #define BUFFER_SIZE 100
 
-// Shared game state
+// Stato del gioco
 typedef struct {
     char c;
     int x;
@@ -29,22 +29,20 @@ typedef struct {
     int id;
     bool active;
     bool collision;
-    pthread_mutex_t mutex;  // Mutex for this position
+    pthread_mutex_t mutex;  // Mutex 
 } position;
 
-// Den structure
 typedef struct {
     int x;
     int y;
     bool occupata;
 } tana;
 
-// Structure for bullets
 typedef struct {
     position pos;
     int direction;          // 1 for right, -1 for left
-    pthread_t thread_id;    // Thread ID for this bullet
-    bool is_enemy;          // true if from crocodile, false if from player
+    pthread_t thread_id;    
+    bool is_enemy;          // true per coccodrillo, false per proiettile
 } bullet;
 
 typedef enum {
@@ -72,7 +70,7 @@ typedef struct {
     pthread_cond_t not_empty;
 } circular_buffer;
 
-// Game state structure - shared between all threads
+// Game state structure 
 typedef struct {
     // Player state
     position player;
@@ -86,22 +84,22 @@ typedef struct {
     
     // Game status
     bool game_over;
-    bool game_paused;       // Flag for game pause
+    bool game_paused;       // Flag pausa
     int remaining_time;
     int max_time;
     time_t last_update;
     
-    // Synchronization
-    pthread_mutex_t game_mutex;       // Overall game state mutex
+    // Sincronizzazione
+    pthread_mutex_t game_mutex;       // Game state mutex
     pthread_mutex_t screen_mutex;     // Screen drawing mutex
-    pthread_cond_t game_update_cond;  // Condition for game updates
+    pthread_cond_t game_update_cond;  // Semaforo per aggiornamento dello stato di gioco
     
-    // Den status
+    // Stato tane
     int tane_occupate;
     
-    // Player-crocodile association
-    bool player_on_crocodile;         // Is player currently on a crocodile
-    int player_crocodile_id;          // ID of crocodile player is riding
+    // Stato coccodrilli-giocatore  
+    bool player_on_crocodile;         
+    int player_crocodile_id;          
 
     circular_buffer event_buffer;
 } game_state;
@@ -117,7 +115,7 @@ typedef struct {
     int bullet_id;
 } bullet_args;
 
-// Thread function declarations
+// Dichiarazione delle funzioni
 void* player_thread(void* arg);
 void* crocodile_thread(void* arg);
 void* bullet_thread(void* arg);
@@ -126,14 +124,12 @@ void* game_thread(void* arg);
 // Game utility functions
 bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int num_coccodrilli, int* direction);
 bool frog_on_the_water(position* rana_pos);
-bool check_den_collision(position* rana_pos, tana* tane, int num_tane);
 int find_free_bullet_slot(game_state* state);
 void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy);
 
-// Initialize and cleanup functions
+// Funzioni di inizializzazione e distruzione
 void init_game_state(game_state* state);
 void destroy_game_state(game_state* state);
-void update_player_on_crocodile(game_state* state);
 
 extern char rana_sprite[2][5];
 

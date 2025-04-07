@@ -3,15 +3,13 @@
 #include <time.h>
 #include <stdlib.h>
 
-// Replacing fixed speed with lane-based speeds
-// #define CROCODILE_SPEED 300000
 
 void* crocodile_thread(void* arg) {
     crocodile_args* args = (crocodile_args*)arg;
     game_state* state = args->state;
     int id = args->id;
     
-    // Copy required data under lock to avoid holding lock during sleep
+    // Copia posizione originale per il calcolo della velocità
     pthread_mutex_lock(&state->crocodiles[id].mutex);
     int lane = (state->crocodiles[id].id / 2) % LANES;
     int direction = (lane % 2 == 0) ? 1 : -1;

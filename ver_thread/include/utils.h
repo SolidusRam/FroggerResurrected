@@ -3,7 +3,7 @@
 
 #include "game.h"
 
-// Drawing functions
+// Funzioni di disegno
 void draw_time_bar(int remaining_time, int max_time);
 void draw_score(int score);
 void draw_river_borders(void);

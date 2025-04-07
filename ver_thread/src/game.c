@@ -10,49 +10,44 @@ char rana_sprite[2][5] = {
 };
 
 void reset_player_safely(game_state* state) {
-    // STEP 1: Reset flags (no mutex required yet)
+    // STEP 1: Reset dei flag
     state->player_on_crocodile = false;
     state->player_crocodile_id = -1;
     
-    // STEP 2: Create reset position first (no locks needed)
+    // STEP 2: Creazione di una nuova posizione per il giocatore
     position new_pos;
-    new_pos.c = '$';  // Use known player character
+    new_pos.c = '$';  
     new_pos.x = GAME_WIDTH/2;
     new_pos.y = GAME_HEIGHT-2;
-    new_pos.width = 5;  // Assuming standard width
-    new_pos.height = 2;  // Assuming standard height
+    new_pos.width = 5;  
+    new_pos.height = 2;  
     new_pos.id = 0;
     new_pos.active = true;
     new_pos.collision = false;
 
     
-    // STEP 3: Lock player mutex - keeping scope minimal
+    // STEP 3: Blocco del mutex atomico
     pthread_mutex_lock(&state->player.mutex);
-    // Update player position
     state->player.x = GAME_WIDTH/2;
     state->player.y = GAME_HEIGHT-2;
     state->player.active = true;
     state->player.collision = false;
-    // Copy values for message
-    new_pos = state->player;  // Copy all fields including c, width, height
+    new_pos = state->player;  // Nuovo messaggio con la posizione aggiornata
+    //sblocco
     pthread_mutex_unlock(&state->player.mutex);
 
 
     
-    // STEP 4: Create reset message with new position
+    // STEP 4: Creazione del messaggio
     game_message reset_msg;
     reset_msg.type = MSG_PLAYER;
     reset_msg.id = 0;
-    reset_msg.pos = new_pos;  // Using our safe copy
+    reset_msg.pos = new_pos;
 
 
-    
-    // STEP 5: Send message (no mutex held)
     buffer_put(&state->event_buffer, &reset_msg);
 
-
-    
-    // STEP 6: Reset timer (using proper lock scope)
+    // TIMER
     pthread_mutex_lock(&state->game_mutex);
     state->remaining_time = state->max_time;
     pthread_mutex_unlock(&state->game_mutex);
@@ -130,7 +125,7 @@ void init_game_state(game_state* state) {
     init_dens(state->tane);
 }
 
-// Clean up resources
+// Clean up 
 void destroy_game_state(game_state* state) {
     pthread_mutex_destroy(&state->game_mutex);
     pthread_mutex_destroy(&state->screen_mutex);
@@ -149,30 +144,30 @@ void destroy_game_state(game_state* state) {
     buffer_destroy(&state->event_buffer);
 }
 
-// Main game loop thread
+// Game loop
 void* game_thread(void* arg) {
     game_state* state = (game_state*)arg;
-    int max_height_reached = GAME_HEIGHT-2; // Track highest position for scoring
+    int max_height_reached = GAME_HEIGHT-2; // Altezza piu alta per il punteggio
 
-    // Time between screen updates (milliseconds)
+    // Temporizzatzione dei frame
     const long FRAME_DELAY = 80000; // 80ms = 12.5 fps
     
     while (!state->game_over && state->vite > 0) {
-        // Check if game is paused
+
+        // Funzione di pausa
         if (state->game_paused) {
-            // When paused, we still need to check for unpause input
             usleep(FRAME_DELAY);
             continue;
         }
         
-        // Update timer
+        // Timer e variabile del tempo  
         time_t current_time = time(NULL);
         if (current_time - state->last_update >= 1) {
             pthread_mutex_lock(&state->game_mutex);
             state->last_update = current_time;
             state->remaining_time--;
             
-            // Check if time is up
+            // Controlla se il tempo è scaduto
             if (state->remaining_time <= 0) {
                 // Imposta game_over prima di tutto il resto
                 state->game_over = true;
@@ -196,9 +191,9 @@ void* game_thread(void* arg) {
             pthread_mutex_unlock(&state->game_mutex);
         }
         
-        // Check if player is on any crocodile
+        // Rana sopra coccodrillo
         pthread_mutex_lock(&state->player.mutex);
-        position player_copy = state->player; // Make a copy to avoid holding lock during checks
+        position player_copy = state->player; 
         pthread_mutex_unlock(&state->player.mutex);
         
         // Solo se il player non è già su un coccodrillo, controlliamo se è atterrato su uno
@@ -206,7 +201,7 @@ void* game_thread(void* arg) {
             // Check for new collisions with crocodiles
             for (int i = 0; i < MAX_CROCODILES; i++) {
                 pthread_mutex_lock(&state->crocodiles[i].mutex);
-                position croc = state->crocodiles[i]; // Copy to avoid holding lock
+                position croc = state->crocodiles[i]; 
                 pthread_mutex_unlock(&state->crocodiles[i].mutex);
                 
                 if (croc.active && 
@@ -228,21 +223,19 @@ void* game_thread(void* arg) {
             }
         }
         
-        // Player fell in water check
+        // Caduta in acqua
         if (!state->player_on_crocodile && frog_on_the_water(&player_copy)) {
             pthread_mutex_lock(&state->game_mutex);
             state->vite--;
             max_height_reached = GAME_HEIGHT-2;
             
             if (state->vite > 0) {
-                // CRITICAL: Unlock game_mutex before proceeding with player updates
                 pthread_mutex_unlock(&state->game_mutex);
                 
-                // Use our safe reset function instead of inline code
                 reset_player_safely(state);
 
             } else {
-                // Game over handling (unchanged)
+                // Game over
                 pthread_mutex_lock(&state->screen_mutex);
                 mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                 mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
@@ -254,16 +247,15 @@ void* game_thread(void* arg) {
                 napms(2000);
             }
         }
-        
-        // Check if player reached a den
+             
+        // Collisione con le tane
         pthread_mutex_lock(&state->player.mutex);
         if (state->player.y <= 1) {
             bool den_reached = false;
-            
-            // Check for collision with a den
+       
             for(int i = 0; i < NUM_TANE; i++) {
                 if (!state->tane[i].occupata) {
-                    // Get center of frog
+                    // Trovo il centro della rana
                     int frog_center_x = state->player.x + (state->player.width / 2);
                     
                     // Check if frog center is within den bounds
@@ -291,13 +283,12 @@ void* game_thread(void* arg) {
                             break;
                         }
                         
-                        // If not won yet, reset player position
+                        //Condizione nel quale non si vince
                         pthread_mutex_unlock(&state->game_mutex);
                         
                         // Rilascia il mutex del player prima di chiamare la funzione di reset sicura
                         pthread_mutex_unlock(&state->player.mutex);
                         
-                        // Usa la funzione sicura invece del codice inline
                         reset_player_safely(state);
 
                         // Riacquisiamo il mutex per continuare il check delle tane
@@ -309,15 +300,14 @@ void* game_thread(void* arg) {
                 }
             }
             
-            // Handle the case where player reached top row but not a valid den
+            // Tana non valida
             if (!den_reached) {
                 // Modifichiamo statistiche di gioco prima di rilasciare il mutex
                 max_height_reached = GAME_HEIGHT-2;
                 
-                // Rilascia il mutex del player prima di tutto
                 pthread_mutex_unlock(&state->player.mutex);
                 
-                // Aggiorna lo stato di gioco in modo thread-safe
+                //tolgo le vite
                 pthread_mutex_lock(&state->game_mutex);
                 state->vite--;
                 bool still_alive = state->vite > 0;
@@ -327,7 +317,7 @@ void* game_thread(void* arg) {
                     // Usa la funzione sicura per il reset 
                     reset_player_safely(state);  
                 } else {
-                    // Game over handling
+                    // Game over 
                     pthread_mutex_lock(&state->game_mutex);
                     pthread_mutex_lock(&state->screen_mutex);
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
@@ -343,7 +333,7 @@ void* game_thread(void* arg) {
         }
         pthread_mutex_unlock(&state->player.mutex);
         
-        // Check bullet collisions
+        // Check bullet rana 
         for (int i = 0; i < MAX_BULLETS; i++) {
             pthread_mutex_lock(&state->bullets[i].pos.mutex);
             bool is_active = state->bullets[i].pos.active;
@@ -358,11 +348,10 @@ void* game_thread(void* arg) {
             bool is_enemy = state->bullets[i].is_enemy;
             pthread_mutex_unlock(&state->bullets[i].pos.mutex);
             
-            // Check for bullet collision with player
             if (is_enemy) {
                 pthread_mutex_lock(&state->player.mutex);
                 
-                // Nuova logica di rilevamento della collisione più precisa
+                
                 bool hit = false;
                 
                 // Verifichiamo se il proiettile colpisce un carattere effettivo della rana e non uno spazio
@@ -392,14 +381,13 @@ void* game_thread(void* arg) {
                     pthread_mutex_unlock(&state->bullets[i].pos.mutex);
                     
                     if (state->vite > 0) {
-                        // CRITICAL: Unlock game_mutex before proceeding with player updates
                         pthread_mutex_unlock(&state->game_mutex);
                         
-                        // Use our safe reset function
+                        // Safe reset
                         reset_player_safely(state);
                         
                     } else {
-                        // Game over handling stays the same
+                        // Game over 
                         pthread_mutex_lock(&state->screen_mutex);
                         mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                         mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
@@ -546,8 +534,6 @@ void* game_thread(void* arg) {
             }
         }
 
-        // Redraw game state - using our improved double buffering function
-        // This will handle all drawing without screen flicker
         draw_game_state(state);
         
         // Sleep for stable frame rate
@@ -559,18 +545,17 @@ void* game_thread(void* arg) {
 
 bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int num_coccodrilli, int* direction) {
     for (int i = 0; i < num_coccodrilli; i++) {
-        // Check if frog is on crocodile
+        // Controlla se la rana e' sopra il coccodrillo
         if (rana_pos->y == crocodile_positions[i].y && 
             rana_pos->x >= crocodile_positions[i].x && 
             rana_pos->x + rana_pos->width <= crocodile_positions[i].x + crocodile_positions[i].width) {
             
-            // Set the direction based on the crocodile's lane
             int lane = (crocodile_positions[i].id/2) % LANES;
             *direction = (lane % 2 == 0) ? 1 : -1;
             return true; // Frog is on crocodile
         }
     }
-    return false; // Frog is not on any crocodile
+    return false; // Frog is not on crocodile
 }
 
 bool frog_on_the_water(position* rana_pos) {
@@ -580,7 +565,8 @@ bool frog_on_the_water(position* rana_pos) {
     return false;
 }
 
-// Find an available bullet slot
+//controllo sul'array dei proiettili
+// per trovare un proiettile libero
 int find_free_bullet_slot(game_state* state) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         pthread_mutex_lock(&state->bullets[i].pos.mutex);
@@ -588,7 +574,7 @@ int find_free_bullet_slot(game_state* state) {
         pthread_mutex_unlock(&state->bullets[i].pos.mutex);
         
         if (!is_active) {
-            return i;
+            return i; //ritorna l'indice del proiettile libero
         }
     }
     return -1; // No free slots
