@@ -235,12 +235,6 @@ void* game_thread(void* arg) {
             max_height_reached = GAME_HEIGHT-2;
             
             if (state->vite > 0) {
-                // Show message first
-                pthread_mutex_lock(&state->screen_mutex);
-                mvprintw(LINES/2, COLS/2-10, "RANA IN ACQUA! Vite: %d", state->vite);
-                refresh();
-                pthread_mutex_unlock(&state->screen_mutex);
-                
                 // CRITICAL: Unlock game_mutex before proceeding with player updates
                 pthread_mutex_unlock(&state->game_mutex);
                 
@@ -325,22 +319,13 @@ void* game_thread(void* arg) {
                 
                 // Aggiorna lo stato di gioco in modo thread-safe
                 pthread_mutex_lock(&state->game_mutex);
-                state->score = 0;
                 state->vite--;
                 bool still_alive = state->vite > 0;
                 pthread_mutex_unlock(&state->game_mutex);
                 
-                if (still_alive) {
-                    // Mostra il messaggio (senza possedere alcun mutex)
-                    pthread_mutex_lock(&state->screen_mutex);
-                    mvprintw(LINES/2, COLS/2-10, "TANA NON VALIDA!");
-                    refresh();
-                    pthread_mutex_unlock(&state->screen_mutex);
-                    
-                    // Usa la funzione sicura per il reset
-                    reset_player_safely(state);
-                    
-                    
+                if (still_alive) {                   
+                    // Usa la funzione sicura per il reset 
+                    reset_player_safely(state);  
                 } else {
                     // Game over handling
                     pthread_mutex_lock(&state->game_mutex);
@@ -407,12 +392,6 @@ void* game_thread(void* arg) {
                     pthread_mutex_unlock(&state->bullets[i].pos.mutex);
                     
                     if (state->vite > 0) {
-                        // Show message first
-                        pthread_mutex_lock(&state->screen_mutex);
-                        mvprintw(LINES/2, COLS/2-10, "RANA COLPITA! Vite: %d", state->vite);
-                        refresh();
-                        pthread_mutex_unlock(&state->screen_mutex);
-                        
                         // CRITICAL: Unlock game_mutex before proceeding with player updates
                         pthread_mutex_unlock(&state->game_mutex);
                         
