@@ -19,56 +19,56 @@ void* crocodile_thread(void* arg) {
     // Seed random number generator uniquely for this thread
     srand(time(NULL) ^ id);
     
-    // Calculate speed based on lane - lower values = faster movement
+    // Calcolo della velocità di movimento in base alla corsia (valori bassi=velocità di movimento maggiore)
     int speed;
     switch(lane % 4) {
         case 0:
-            speed = 250000; // lane 0, 4, 8 - medium speed
+            speed = 250000; // corsia 0, 4, 8 - media
             break;
         case 1:
-            speed = 300000; // lane 1, 5, 9 - slow speed
+            speed = 300000; // corsia 1, 5, 9 - lenta
             break;
         case 2:
-            speed = 180000; // lane 2, 6, 10 - fast speed
+            speed = 180000; // corsia 2, 6, 10 - veloce
             break;
         case 3:
-            speed = 220000; // lane 3, 7, 11 - medium-fast speed
+            speed = 220000; // corsia 3, 7, 11 - medio-veloce
             break;
         default:
             speed = 250000; // fallback
     }
     
-    // Add some random variation to the speed (±10%)
+    // Aggiunta randomica alla velocità di movimento
     speed = speed * (90 + rand() % 21) / 100;
     
     while (!state->game_over) {
-        // Check if game is paused
+        // Controllo per la pausa
         if (state->game_paused) {
-            usleep(100000); // Sleep briefly and check pause flag again
+            usleep(100000); 
             continue;
         }
         
-        // Lock position for update
+        // Blocca la posizione per permetterne l'aggiornamento
         pthread_mutex_lock(&state->crocodiles[id].mutex);
         
         // Controlla se il player è su questo coccodrillo per garantire
         // movimento sincronizzato
         bool has_player = (state->player_on_crocodile && state->player_crocodile_id == id);
         
-        // Update position
+        // Aggiorna la posizione
         state->crocodiles[id].x += direction;
         
-        // Handle boundary wrapping
-        if (direction > 0) {  // Moving right
+        // Gestione dei confini
+        if (direction > 0) {  // Ci si sposta a destra
             if (state->crocodiles[id].x + state->crocodiles[id].width > GAME_WIDTH - 1) {
-                // Partially or fully off screen to the right
+                // Uscita totale o parziale verso destra
                 int overflow = (state->crocodiles[id].x + state->crocodiles[id].width) - (GAME_WIDTH - 1);
                 state->crocodiles[id].width = state->crocodiles[id].width - overflow;
                 
                 if (state->crocodiles[id].width <= 0) {
                     // Wrap around to left side
                     state->crocodiles[id].x = 1;
-                    state->crocodiles[id].width = 1; // Start growing from left side
+                    state->crocodiles[id].width = 1; // Inizia a crearsi da sinistra
                     
                     // Se il player è sul coccodrillo che sta sparendo, cade in acqua
                     if (has_player) {
@@ -79,19 +79,19 @@ void* crocodile_thread(void* arg) {
                     }
                 }
             } else if (state->crocodiles[id].width < original_width) {
-                // Keep growing when entering from left
+                // Continua la creazione mentre si muove da sinistra
                 state->crocodiles[id].width++;
             }
-        } else {  // Moving left
+        } else {  // Spostamento verso destra
             if (state->crocodiles[id].x <= 0) {
-                // Partially or fully off screen to the left
+                // Uscita totale o parziale verso sinistra
                 state->crocodiles[id].width = state->crocodiles[id].width - 1;
                 state->crocodiles[id].x = 1;
                 
                 if (state->crocodiles[id].width <= 0) {
                     // Wrap around to right side
                     state->crocodiles[id].x = GAME_WIDTH - 2;
-                    state->crocodiles[id].width = 1; // Start growing from right side
+                    state->crocodiles[id].width = 1; // Inizia a crearsi da destra
                     
                     // Se il player è sul coccodrillo che sta sparendo, cade in acqua
                     if (has_player) {
@@ -102,7 +102,7 @@ void* crocodile_thread(void* arg) {
                     }
                 }
             } else if (state->crocodiles[id].width < original_width) {
-                // Keep growing when entering from right
+                // Continua la creazione mentre si muove da destra
                 state->crocodiles[id].width++;
                 state->crocodiles[id].x--;
                 
@@ -115,11 +115,12 @@ void* crocodile_thread(void* arg) {
             }
         }
         
-        // Don't shoot if the game is paused
+        // Controllo che blocca i proiettili e la possibilità di sparare
+        // in caso il gioco si trovi in pausa
         if (!state->game_paused) {
-            // Randomly shoot bullet (3% chance)
+            // Possibilità casuale di sparare un colpo (3%)
             if (rand() % 100 < 3) {
-                // Determine bullet position based on direction
+                // Determina la posizione del proiettile in base alla sua direzione
                 int bullet_x = (direction > 0) ? 
                     state->crocodiles[id].x + state->crocodiles[id].width - 1 : 
                     state->crocodiles[id].x;
@@ -128,8 +129,8 @@ void* crocodile_thread(void* arg) {
                     state,
                     bullet_x,               // x position
                     state->crocodiles[id].y, // y position
-                    direction,               // same direction as crocodile
-                    true                     // enemy bullet
+                    direction,               // segue la direzione del cocodrillo
+                    true                     // colpo del nemico
                 );
             }
         }
@@ -155,7 +156,7 @@ void* crocodile_thread(void* arg) {
         usleep(speed);
     }
     
-    // Free allocated memory for arguments
+    // Libera la memoria allocate per i vari arguments
     free(arg);
     return NULL;
 }
