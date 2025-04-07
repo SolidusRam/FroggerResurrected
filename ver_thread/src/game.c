@@ -5,7 +5,7 @@
 
 // Define the frog sprite
 char rana_sprite[2][5] = {
-    {'|', ' ', 'O', ' ', ' '},
+    {' ', ' ', 'O', ' ', ' '},
     {'_', '`', 'O', '\'', '_'}
 };
 
@@ -613,43 +613,4 @@ int find_free_bullet_slot(game_state* state) {
         }
     }
     return -1; // No free slots
-}
-
-// Thread di debug per testare collisioni tra proiettili
-void* debug_bullet_test_thread(void* arg) {
-    game_state* state = (game_state*)arg;
-    
-    while (!state->game_over) {
-        // Non generare proiettili se il gioco è in pausa
-        if (state->game_paused) {
-            usleep(200000); // 200ms
-            continue;
-        }
-        
-        // Definisci la posizione y nel fiume (parte inferiore)
-        int y_pos = FLOOR_HEIGHT - 4; // Posizione y nel fiume, ma più in basso
-        
-        // Genera un proiettile nemico dal lato sinistro
-        create_bullet(
-            state,
-            2,              // Posizione x estremo sinistro 
-            y_pos,          // Posizione y nel fiume
-            1,              // Direzione verso destra
-            true            // Proiettile nemico
-        );
-        
-        // Genera un proiettile del giocatore dal lato destro
-        create_bullet(
-            state,
-            GAME_WIDTH - 3, // Posizione x estremo destro
-            y_pos,          // Stessa posizione y del proiettile nemico
-            -1,             // Direzione verso sinistra
-            false           // Proiettile del giocatore
-        );
-        
-        // Aspetta un po' prima di generare altri proiettili di debug (1 secondo)
-        usleep(1000000);
-    }
-    
-    return NULL;
 }
