@@ -102,21 +102,21 @@ void init_dens(struct tana *tane) {
 
 void draw_dens(struct tana tane[]) {
     for(int i = 0; i < NUM_TANE; i++) {
-        // Draw den border
-        attron(COLOR_PAIR(3)); // Use river border color
+        // Disegna bordo della tana
+        attron(COLOR_PAIR(3)); // Usa colore del bordo
         mvaddch(tane[i].y, tane[i].x - 1, ACS_LTEE);
         mvaddch(tane[i].y, tane[i].x + TANA_WIDTH, ACS_RTEE);
         attroff(COLOR_PAIR(3));
 
         if(tane[i].occupata) {
-            // Draw occupied 
+            // Disegna tana occupata
             attron(COLOR_PAIR(7)); 
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ACS_CKBOARD);
             }
             attroff(COLOR_PAIR(7));
         } else {
-            // Draw empty den
+            // Disegna tana vuota
             attron(COLOR_PAIR(6));
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ' ');
@@ -126,11 +126,11 @@ void draw_dens(struct tana tane[]) {
     }
 }
 bool check_den_collision(struct position *rana_pos, struct tana tane[]) {
-    // Center point of the frog
+    // Punto centrale della rana
     int frog_center_x = rana_pos->x + (rana_pos->width / 2);
     
     for(int i = 0; i < NUM_TANE; i++) {
-        // Check if den is already occupied
+        // controlla se la tana è occupata
         if(!tane[i].occupata) {
             if(frog_center_x >= tane[i].x && 
                frog_center_x <= tane[i].x + TANA_WIDTH &&
