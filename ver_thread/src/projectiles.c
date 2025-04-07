@@ -46,6 +46,8 @@ void* bullet_thread(void* arg) {
             deactivate_msg.type = MSG_BULLET;
             deactivate_msg.id = bullet_id;
             deactivate_msg.pos = state->bullets[bullet_id].pos;
+            // Esplicitamente imposta attivo a falso nel messaggio
+            deactivate_msg.pos.active = false;
             
             pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
             
@@ -74,6 +76,18 @@ void* bullet_thread(void* arg) {
     pthread_mutex_lock(&state->bullets[bullet_id].pos.mutex);
     state->bullets[bullet_id].pos.active = false;
     pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
+    
+    // Invia un messaggio finale per assicurarsi che il proiettile venga rimosso dal display
+    game_message final_msg;
+    final_msg.type = MSG_BULLET;
+    final_msg.id = bullet_id;
+    pthread_mutex_lock(&state->bullets[bullet_id].pos.mutex);
+    final_msg.pos = state->bullets[bullet_id].pos;
+    final_msg.pos.active = false;
+    pthread_mutex_unlock(&state->bullets[bullet_id].pos.mutex);
+    
+    // Invia il messaggio finale
+    buffer_put(&state->event_buffer, &final_msg);
     
     // Free allocated memory for arguments
     free(arg);

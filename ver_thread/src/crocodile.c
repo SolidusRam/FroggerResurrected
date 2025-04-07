@@ -119,8 +119,8 @@ void* crocodile_thread(void* arg) {
         
         // Don't shoot if the game is paused
         if (!state->game_paused) {
-            // Randomly shoot bullet (5% chance)
-            if (rand() % 100 < 5) {
+            // Randomly shoot bullet (3% chance)
+            if (rand() % 100 < 3) {
                 // Determine bullet position based on direction
                 int bullet_x = (direction > 0) ? 
                     state->crocodiles[id].x + state->crocodiles[id].width - 1 : 

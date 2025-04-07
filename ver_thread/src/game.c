@@ -444,24 +444,86 @@ void* game_thread(void* arg) {
                     bool j_enemy = state->bullets[j].is_enemy;
                     bool j_collided = state->bullets[j].pos.collision;
                     position j_pos = state->bullets[j].pos;
+                    int j_direction = state->bullets[j].direction;
                     pthread_mutex_unlock(&state->bullets[j].pos.mutex);
                     
                     if (!j_active || j_enemy || j_collided)
                         continue;
                     
-                    if (bullet_pos.x == j_pos.x && bullet_pos.y == j_pos.y) {
+                    // Memorizza la posizione precedente per rilevare "attraversamenti"
+                    int prev_i_x = bullet_pos.x - state->bullets[i].direction;
+                    int prev_j_x = j_pos.x - j_direction;
+                    int next_i_x = bullet_pos.x + state->bullets[i].direction;
+                    int next_j_x = j_pos.x + j_direction;
+                    
+                    // Verifica diversi tipi di collisione
+                    bool direct_collision = (bullet_pos.x == j_pos.x && bullet_pos.y == j_pos.y);
+                    bool crossed_paths = (bullet_pos.x == prev_j_x && j_pos.x == prev_i_x && 
+                                       bullet_pos.y == j_pos.y &&
+                                       state->bullets[i].direction != j_direction);
+                    
+                    // Verifica se i proiettili saranno molto vicini nel prossimo frame
+                    bool will_cross_next = (next_i_x == j_pos.x || bullet_pos.x == next_j_x) && 
+                                          bullet_pos.y == j_pos.y &&
+                                          state->bullets[i].direction != j_direction;
+                                          
+                    // Verifica se i proiettili sono adiacenti con direzioni opposte
+                    bool adjacent_opposing = (bullet_pos.x == j_pos.x + j_direction &&
+                                           j_pos.x == bullet_pos.x + state->bullets[i].direction &&
+                                           bullet_pos.y == j_pos.y &&
+                                           state->bullets[i].direction != j_direction);
+                    
+                    if (direct_collision || crossed_paths || will_cross_next || adjacent_opposing) {
                         // Bullets collided
                         pthread_mutex_lock(&state->game_mutex);
                         state->score += 50;
+                        
+                        // Visualizzazione temporanea della collisione
+                        pthread_mutex_lock(&state->screen_mutex);
+                        // Determina dove visualizzare la collisione
+                        int collision_x;
+                        if (direct_collision) {
+                            collision_x = bullet_pos.x;
+                        } else if (crossed_paths || adjacent_opposing) {
+                            collision_x = (bullet_pos.x + j_pos.x) / 2;
+                        } else { // will_cross_next
+                            collision_x = (next_i_x + next_j_x) / 2;
+                        }
+                        mvprintw(bullet_pos.y, collision_x, "X");
+                        refresh();
+                        pthread_mutex_unlock(&state->screen_mutex);
+                        
                         pthread_mutex_unlock(&state->game_mutex);
                         
+                        // Disattiva entrambi i proiettili
                         pthread_mutex_lock(&state->bullets[i].pos.mutex);
                         state->bullets[i].pos.collision = true;
+                        state->bullets[i].pos.active = false;  // Imposta come inattivo
                         pthread_mutex_unlock(&state->bullets[i].pos.mutex);
                         
                         pthread_mutex_lock(&state->bullets[j].pos.mutex);
                         state->bullets[j].pos.collision = true;
+                        state->bullets[j].pos.active = false;  // Imposta come inattivo
                         pthread_mutex_unlock(&state->bullets[j].pos.mutex);
+                        
+                        // Invia messaggi finali per aggiornare lo stato dei proiettili
+                        game_message msg_i, msg_j;
+                        
+                        msg_i.type = MSG_BULLET;
+                        msg_i.id = i;
+                        msg_i.pos = state->bullets[i].pos;
+                        msg_i.pos.active = false;
+                        msg_i.pos.collision = true;
+                        
+                        msg_j.type = MSG_BULLET;
+                        msg_j.id = j;
+                        msg_j.pos = state->bullets[j].pos;
+                        msg_j.pos.active = false;
+                        msg_j.pos.collision = true;
+                        
+                        // Invia i messaggi
+                        buffer_put(&state->event_buffer, &msg_i);
+                        buffer_put(&state->event_buffer, &msg_j);
                         
                         break;
                     }
@@ -551,4 +613,43 @@ int find_free_bullet_slot(game_state* state) {
         }
     }
     return -1; // No free slots
+}
+
+// Thread di debug per testare collisioni tra proiettili
+void* debug_bullet_test_thread(void* arg) {
+    game_state* state = (game_state*)arg;
+    
+    while (!state->game_over) {
+        // Non generare proiettili se il gioco è in pausa
+        if (state->game_paused) {
+            usleep(200000); // 200ms
+            continue;
+        }
+        
+        // Definisci la posizione y nel fiume (parte inferiore)
+        int y_pos = FLOOR_HEIGHT - 4; // Posizione y nel fiume, ma più in basso
+        
+        // Genera un proiettile nemico dal lato sinistro
+        create_bullet(
+            state,
+            2,              // Posizione x estremo sinistro 
+            y_pos,          // Posizione y nel fiume
+            1,              // Direzione verso destra
+            true            // Proiettile nemico
+        );
+        
+        // Genera un proiettile del giocatore dal lato destro
+        create_bullet(
+            state,
+            GAME_WIDTH - 3, // Posizione x estremo destro
+            y_pos,          // Stessa posizione y del proiettile nemico
+            -1,             // Direzione verso sinistra
+            false           // Proiettile del giocatore
+        );
+        
+        // Aspetta un po' prima di generare altri proiettili di debug (1 secondo)
+        usleep(1000000);
+    }
+    
+    return NULL;
 }

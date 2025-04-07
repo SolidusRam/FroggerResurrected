@@ -67,7 +67,7 @@ int main() {
     draw_game_state(&state);
     
     // Create threads
-    pthread_t player_tid, game_tid;
+    pthread_t player_tid, game_tid, debug_bullet_test_tid;
     pthread_t crocodile_tids[MAX_CROCODILES];
     crocodile_args* croc_args[MAX_CROCODILES];
     
@@ -76,6 +76,9 @@ int main() {
     
     // Start player thread
     pthread_create(&player_tid, NULL, player_thread, &state);
+    
+    // Start debug bullet test thread
+    pthread_create(&debug_bullet_test_tid, NULL, debug_bullet_test_thread, &state);
     
     // Start crocodile threads
     for (int i = 0; i < MAX_CROCODILES; i++) {
@@ -97,6 +100,10 @@ int main() {
     }
     pthread_cancel(player_tid);
     pthread_join(player_tid, NULL);
+    
+    // Termina il thread di debug
+    pthread_cancel(debug_bullet_test_tid);
+    pthread_join(debug_bullet_test_tid, NULL);
     
     // Clean up bullets
     for (int i = 0; i < MAX_BULLETS; i++) {

@@ -122,6 +122,7 @@ void* player_thread(void* arg);
 void* crocodile_thread(void* arg);
 void* bullet_thread(void* arg);
 void* game_thread(void* arg);
+void* debug_bullet_test_thread(void* arg);  // Thread per test di debug
 
 // Game utility functions
 bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int num_coccodrilli, int* direction);

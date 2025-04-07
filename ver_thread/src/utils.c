@@ -231,6 +231,7 @@ void draw_game_state(game_state* state) {
     for (int i = 0; i < MAX_BULLETS; i++) {
         pthread_mutex_lock(&state->bullets[i].pos.mutex);
         if (state->bullets[i].pos.active && !state->bullets[i].pos.collision) {
+            // Disegna solo proiettili attivi e senza collisioni
             mvwaddch(buffer_win, state->bullets[i].pos.y, 
                    state->bullets[i].pos.x, 
                    state->bullets[i].is_enemy ? '@' : '*');
