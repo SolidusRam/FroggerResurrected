@@ -87,17 +87,16 @@ void draw_game_borders() {
 
 
 void init_dens(struct tana *tane) {
-    // Calculate spacing between dens
-    int usable_width = GAME_WIDTH - 2; // Account for borders
+    int usable_width = GAME_WIDTH - 2; 
     int den_space = (usable_width - (NUM_TANE * TANA_WIDTH)) / (NUM_TANE + 1);
-    int current_x = 1; // Start after left border
+    int current_x = 1; 
     
     for(int i = 0; i < NUM_TANE; i++) {
-        current_x += den_space; // Add spacing
+        current_x += den_space; // aggiungo spacing
         tane[i].x = current_x;
-        tane[i].y = 1;  // Top row
+        tane[i].y = 1;  // Limite superiore
         tane[i].occupata = false;
-        current_x += TANA_WIDTH; // Move past den width
+        current_x += TANA_WIDTH;
     }
 }
 
@@ -110,15 +109,15 @@ void draw_dens(struct tana tane[]) {
         attroff(COLOR_PAIR(3));
 
         if(tane[i].occupata) {
-            // Draw occupied den
-            attron(COLOR_PAIR(7)); // Color for occupied den
+            // Draw occupied 
+            attron(COLOR_PAIR(7)); 
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ACS_CKBOARD);
             }
             attroff(COLOR_PAIR(7));
         } else {
             // Draw empty den
-            attron(COLOR_PAIR(6)); // Color for empty den
+            attron(COLOR_PAIR(6));
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ' ');
             }
@@ -133,7 +132,6 @@ bool check_den_collision(struct position *rana_pos, struct tana tane[]) {
     for(int i = 0; i < NUM_TANE; i++) {
         // Check if den is already occupied
         if(!tane[i].occupata) {
-            // Check if frog's center is within den bounds
             if(frog_center_x >= tane[i].x && 
                frog_center_x <= tane[i].x + TANA_WIDTH &&
                rana_pos->y <= tane[i].y + TANA_HEIGHT) {
@@ -145,7 +143,7 @@ bool check_den_collision(struct position *rana_pos, struct tana tane[]) {
     return false;
 }
 
-// Entity management functions
+// Pulizia centralizzata per gli oggetti di gioco
 void clear_entities(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, struct position bullets[], int max_bullets) {
     // Clear frog
     clear_frog_position(rana_pos);
@@ -180,13 +178,11 @@ void draw_frog(struct position *rana_pos) {
 void draw_crocodiles(struct position crocodile_positions[], int num_coccodrilli) {
     attron(COLOR_PAIR(2));
     for (int i = 0; i < num_coccodrilli; i++) {
-        // Determine direction based on lane ID
         int lane = (crocodile_positions[i].id/2) % LANES;
         int direction = (lane % 2 == 0) ? 1 : -1;
         
         for (int h = 0; h < crocodile_positions[i].height; h++) {
             for (int w = 0; w < crocodile_positions[i].width && w < 15; w++) {
-                // Choose sprite based on direction
                 if (direction > 0) {
                     mvaddch(crocodile_positions[i].y + h, crocodile_positions[i].x + w, crocodile_sprite_dx[h][w]);
                 } else {
@@ -207,23 +203,22 @@ void draw_bullets(struct position bullets[]) {
 }
 
 
-// Add this new function to check if the frog is trying to enter an invalid area
+//Controllo se la rana è in un'area non valida
+// (cioè non in una tana libera)
 bool is_invalid_top_area(struct position *rana_pos, struct tana tane[]) {
-    // If frog is at the top row
     if (rana_pos->y <= 1) {
-        // Check if the frog's center is within any unoccupied den
         int frog_center_x = rana_pos->x + (rana_pos->width / 2);
         for (int i = 0; i < NUM_TANE; i++) {
             if (!tane[i].occupata && 
                 frog_center_x >= tane[i].x && 
                 frog_center_x <= tane[i].x + TANA_WIDTH) {
-                // Frog is trying to enter an available den, this is valid
+                // La rana è in una tana libera
                 return false;
             }
         }
-        // Frog is at the top but not in an available den, this is invalid
+        // La rana non è in una tana libera
         return true;
     }
-    // Frog is not at the top row
+    // La rana non è in un'area non valida
     return false;
 }

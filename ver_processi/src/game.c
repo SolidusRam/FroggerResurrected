@@ -222,31 +222,30 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         }else if(p.c == '@' || p.c == '*'){
             int found = 0;
             
-            // First, check for inactive bullets and clean them up
+            // Controllo se il processo è ancora attivo
+            // Se non è attivo, lo segno come inattivo
             for (int i = 0; i < MAX_BULLETS; i++) {
                 if (bullets[i].active) {
-                    // Check if process is still alive
                     if (kill(bullets[i].pid, 0) == -1 && errno == ESRCH) {
-                        // Process doesn't exist anymore, mark bullet inactive
                         bullets[i].active = 0;
                     }
                 }
             }
             
-            // Then process the current bullet
+            // Processo proiettile attivo
             for (int i = 0; i < MAX_BULLETS; i++) {
                 if (bullets[i].active && bullets[i].pid == p.pid) {
                     int was_collided = bullets[i].collision;
                     bullets[i].x = p.x;
                     bullets[i].y = p.y;
-                    bullets[i].active = p.active;  // Update active status from the message
+                    bullets[i].active = p.active; 
                     bullets[i].collision = was_collided || p.collision;
                     found = 1;
                     break;
                 }
             }
             
-            // If not found and still active, find an empty slot
+            // Se non è stato trovato e il proiettile è attivo, lo aggiungo
             if (!found && p.active) {
                 for (int i = 0; i < MAX_BULLETS; i++) {
                     if (!bullets[i].active) {
@@ -295,7 +294,7 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 remaining_time = max_time;
                 max_height_reached = GAME_HEIGHT-2; // Reset max height
 
-                // Reset rana position after filling a den
+                // Reset rana position
                 rana_pos.x = GAME_WIDTH/2;
                 rana_pos.y = GAME_HEIGHT-2;
                 write(pipeToFrog, &rana_pos, sizeof(struct position));
@@ -318,14 +317,11 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 score=0;
                 (*vite)--;
                 if(*vite > 0) {
-                    // 1. Clear old position
                     clear_frog_position(&rana_pos);
                     
-                    // 2. Reset position
                     rana_pos.x = GAME_WIDTH/2;
                     rana_pos.y = GAME_HEIGHT-2;
                     
-                    // 3. Write new position to pipe with error check
                     ssize_t w = write(pipeToFrog, &rana_pos, sizeof(struct position));
                     if(w < 0) {
                         mvprintw(0, 0, "Pipe write error: %s", strerror(errno));
@@ -335,18 +331,16 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     // Si resetta lo score
                     score=0;
                     
-                    // 4. Show message
                     mvprintw(LINES/2, COLS/2-10, "RANA COLPITA! Vite: %d", *vite);
                     refresh();
                     napms(2000);
                     
-                    // 5. Reset timer
+                    // Reset timer
                     remaining_time = max_time;
                     
-                    // 6. Clear collision bullet
+                    // Clear collision bullet
                     bullets[i].collision = 1;
                     
-                    // 7. Redraw frog at new position
                     attron(COLOR_PAIR(1));
                     for (int i = 0; i < rana_pos.height; i++)
                     {
@@ -440,7 +434,7 @@ bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_posit
             return true; // Frog is on crocodile
         }
     }
-    return false; // Frog is not on any crocodile
+    return false;
 }
 
 bool frog_on_the_water(struct position *rana_pos){

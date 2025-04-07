@@ -25,7 +25,6 @@
 #define TANA_WIDTH 7
 #define TANA_HEIGHT 1
 
-// Declare sprites as external - they will be defined in a .c file
 extern char rana_sprite[2][5];
 extern char crocodile_sprite_sx[2][15];
 extern char crocodile_sprite_dx[2][15];
