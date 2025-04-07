@@ -22,12 +22,12 @@ void buffer_destroy(circular_buffer* buf) {
 void buffer_put(circular_buffer* buf, game_message* item) {
     pthread_mutex_lock(&buf->mutex);
     
-    // Wait while buffer is full
+    // Attesa se il buffer è pieno
     while (buf->count == buf->capacity) {
         pthread_cond_wait(&buf->not_full, &buf->mutex);
     }
     
-    // Add item to buffer
+    // Aggiunta di un item al buffer
     buf->array[buf->tail] = *item;
     buf->tail = (buf->tail + 1) % buf->capacity;
     buf->count++;
@@ -39,12 +39,12 @@ void buffer_put(circular_buffer* buf, game_message* item) {
 void buffer_get(circular_buffer* buf, game_message* msg) {
     pthread_mutex_lock(&buf->mutex);
     
-    // Wait if buffer is empty
+    // Attesa in caso di buffer vuoto
     while (buf->count == 0) {
         pthread_cond_wait(&buf->not_empty, &buf->mutex);
     }
     
-    // Get item from buffer
+    // Presa di un item dal buffer
     *msg = buf->array[buf->head];
     buf->head = (buf->head + 1) % buf->capacity;
     buf->count--;
@@ -61,7 +61,7 @@ bool buffer_try_get(circular_buffer* buf, game_message* msg) {
         return false;
     }
     
-    // Get item from buffer
+    // Presa di un item dal buffer
     *msg = buf->array[buf->head];
     buf->head = (buf->head + 1) % buf->capacity;
     buf->count--;
