@@ -3,7 +3,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-// Define the frog sprite
+// Sprite della rana
 char rana_sprite[2][5] = {
     {' ', ' ', 'O', ' ', ' '},
     {'_', '`', 'O', '\'', '_'}
@@ -56,9 +56,9 @@ void reset_player_safely(game_state* state) {
 
 }
 
-// Initialize the game state
+// Inizializzazione del game state
 void init_game_state(game_state* state) {
-    // Initialize mutex and condition variables
+    // Inizializzazione del mutex e delle variabili di condizione
     pthread_mutex_init(&state->game_mutex, NULL);
     pthread_mutex_init(&state->screen_mutex, NULL);
     pthread_cond_init(&state->game_update_cond, NULL);
@@ -66,7 +66,7 @@ void init_game_state(game_state* state) {
     buffer_init(&state->event_buffer, BUFFER_SIZE);
 
     
-    // Initialize player
+    // Inizializzazione del player
     state->player.c = '$';
     state->player.x = GAME_WIDTH/2;
     state->player.y = GAME_HEIGHT-2;
@@ -77,11 +77,11 @@ void init_game_state(game_state* state) {
     state->player.collision = false;
     pthread_mutex_init(&state->player.mutex, NULL);
     
-    // Initialize game stats
+    // Inizializzazione delle statistiche di gioco
     state->vite = 3;
     state->score = 0;
     state->game_over = false;
-    state->game_paused = false;  // Initialize pause flag
+    state->game_paused = false;  // Inizializza la flag di pausa
     state->max_time = 30;
     state->remaining_time = state->max_time;
     state->last_update = time(NULL);
@@ -89,7 +89,7 @@ void init_game_state(game_state* state) {
     state->player_on_crocodile = false;
     state->player_crocodile_id = -1;
     
-    // Initialize crocodiles
+    // Inizilizza i coccodrilli
     for (int i = 0; i < MAX_CROCODILES; i++) {
         int lane = (i/2) % LANES;
         int direction = (lane % 2 == 0) ? 1 : -1;
@@ -114,14 +114,14 @@ void init_game_state(game_state* state) {
         pthread_mutex_init(&state->crocodiles[i].mutex, NULL);
     }
     
-    // Initialize bullets
+    // Inizializza i proiettili
     for (int i = 0; i < MAX_BULLETS; i++) {
         state->bullets[i].pos.active = false;
         state->bullets[i].pos.collision = false;
         pthread_mutex_init(&state->bullets[i].pos.mutex, NULL);
     }
     
-    // Initialize dens
+    // Inizializza le tane
     init_dens(state->tane);
 }
 
@@ -149,7 +149,7 @@ void* game_thread(void* arg) {
     game_state* state = (game_state*)arg;
     int max_height_reached = GAME_HEIGHT-2; // Altezza piu alta per il punteggio
 
-    // Temporizzatzione dei frame
+    // Temporizzazione dei frame
     const long FRAME_DELAY = 80000; // 80ms = 12.5 fps
     
     while (!state->game_over && state->vite > 0) {
@@ -198,7 +198,7 @@ void* game_thread(void* arg) {
         
         // Solo se il player non è già su un coccodrillo, controlliamo se è atterrato su uno
         if (!state->player_on_crocodile) {
-            // Check for new collisions with crocodiles
+            // Contreolla per nuove collisioni con i coccodrilli
             for (int i = 0; i < MAX_CROCODILES; i++) {
                 pthread_mutex_lock(&state->crocodiles[i].mutex);
                 position croc = state->crocodiles[i]; 
@@ -258,7 +258,7 @@ void* game_thread(void* arg) {
                     // Trovo il centro della rana
                     int frog_center_x = state->player.x + (state->player.width / 2);
                     
-                    // Check if frog center is within den bounds
+                    // Controlla se il centro della rana si trova in prossimità della tana
                     if (frog_center_x >= state->tane[i].x && 
                         frog_center_x <= state->tane[i].x + TANA_WIDTH) {
                         
@@ -270,7 +270,7 @@ void* game_thread(void* arg) {
                         max_height_reached = GAME_HEIGHT-2;
                         den_reached = true;
                         
-                        // Check win condition first
+                        // Controlla la condizione di vittoria
                         if (state->tane_occupate == NUM_TANE) {
                             pthread_mutex_lock(&state->screen_mutex);
                             clear();
@@ -333,7 +333,7 @@ void* game_thread(void* arg) {
         }
         pthread_mutex_unlock(&state->player.mutex);
         
-        // Check bullet rana 
+        // Controllo per il proiettile della rana 
         for (int i = 0; i < MAX_BULLETS; i++) {
             pthread_mutex_lock(&state->bullets[i].pos.mutex);
             bool is_active = state->bullets[i].pos.active;
@@ -383,7 +383,7 @@ void* game_thread(void* arg) {
                     if (state->vite > 0) {
                         pthread_mutex_unlock(&state->game_mutex);
                         
-                        // Safe reset
+                        // Reset safe
                         reset_player_safely(state);
                         
                     } else {
@@ -401,7 +401,7 @@ void* game_thread(void* arg) {
                 }
             }
             
-            // Check for bullet-bullet collisions
+            // Controllo per collisioni tra proiettili
             if (is_enemy) {
                 for (int j = 0; j < MAX_BULLETS; j++) {
                     if (j == i) continue;
@@ -441,7 +441,7 @@ void* game_thread(void* arg) {
                                            state->bullets[i].direction != j_direction);
                     
                     if (direct_collision || crossed_paths || will_cross_next || adjacent_opposing) {
-                        // Bullets collided
+                        // Caso in cui i proiettili collidono
                         pthread_mutex_lock(&state->game_mutex);
                         state->score += 50;
                         
@@ -536,7 +536,7 @@ void* game_thread(void* arg) {
 
         draw_game_state(state);
         
-        // Sleep for stable frame rate
+        // Sleep per tenere fluido il frame rate
         usleep(FRAME_DELAY);
     }
     
@@ -552,10 +552,10 @@ bool rana_coccodrillo(position* rana_pos, position crocodile_positions[], int nu
             
             int lane = (crocodile_positions[i].id/2) % LANES;
             *direction = (lane % 2 == 0) ? 1 : -1;
-            return true; // Frog is on crocodile
+            return true; // La rana è su un coccodrillo
         }
     }
-    return false; // Frog is not on crocodile
+    return false; // La rana non è sul coccodrillo
 }
 
 bool frog_on_the_water(position* rana_pos) {
@@ -577,5 +577,5 @@ int find_free_bullet_slot(game_state* state) {
             return i; //ritorna l'indice del proiettile libero
         }
     }
-    return -1; // No free slots
+    return -1; // in caso di slot non disponibili
 }
