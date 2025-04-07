@@ -1,6 +1,6 @@
 #include "../include/game.h"
 
-// Define the sprites here so they are only defined once
+// Definizione sprite della rana
 char rana_sprite[2][5] = {
     {' ', ' ', 'O', ' ', ' '},
     {'_', '`', 'O', '\'', '_'}
