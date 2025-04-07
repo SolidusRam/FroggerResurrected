@@ -8,7 +8,7 @@
 void coccodrillo(int pipeout,int id){
     srand(time(NULL)^id);
     struct position p;
-    int direction = 0; // 1 = right, -1 = left
+    int direction = 0; // 1 = destra, -1 = sinistra
     int original_width;
     int speed;
     
