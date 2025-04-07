@@ -33,14 +33,14 @@ void draw_time_bar(int remaining_time, int max_time) {
     // Label
     mvprintw(y_start, x_start, "TEMPO: ");
 
-    // Draw filled part (green)
+    // Disegna la parte piena della barra (verde)
     attron(COLOR_PAIR(1)); 
     for (int i = 0; i < filled_length; i++) {
         mvaddch(y_start, x_start + 8 + i, ACS_CKBOARD);
     }
     attroff(COLOR_PAIR(1));
 
-    // Draw empty part
+    // Disegna la parte vuota
     for (int i = filled_length; i < bar_length; i++) {
         mvaddch(y_start, x_start + 8 + i, ' ');
     }
@@ -49,12 +49,12 @@ void draw_time_bar(int remaining_time, int max_time) {
 void draw_river_borders() {
     attron(COLOR_PAIR(3));
     
-    // Upper river border (y=3)
+    // Bordo superiore del fiume (y=3)
     mvhline(3, 1, ACS_HLINE, GAME_WIDTH-2);
     mvaddch(3, 0, ACS_LTEE);
     mvaddch(3, GAME_WIDTH-1, ACS_RTEE);
     
-    // Lower river border (y=FLOOR_HEIGHT)
+    // Bordo inferiore del fiume (y=FLOOR_HEIGHT)
     mvhline(FLOOR_HEIGHT, 1, ACS_HLINE, GAME_WIDTH-2);
     mvaddch(FLOOR_HEIGHT, 0, ACS_LTEE);
     mvaddch(FLOOR_HEIGHT, GAME_WIDTH-1, ACS_RTEE);
@@ -67,7 +67,7 @@ void clear_frog_position(position *pos) {
     
     for (int i = 0; i < pos->height; i++) {
         for (int j = 0; j < pos->width; j++) {
-            // If on a river border, redraw the border
+            // QUando ci si trova su un bordo del fiume si ridisegna il bordo
             if (pos->y + i == 3 || pos->y + i == FLOOR_HEIGHT) {
                 mvaddch(pos->y + i, pos->x + j, ACS_HLINE);
             } else {
@@ -78,10 +78,10 @@ void clear_frog_position(position *pos) {
 }
 
 void draw_game_borders() {
-    // Brown color for land
+    // Marrone per la terra
     init_pair(5, COLOR_YELLOW, COLOR_RED);
     
-    // Draw bottom land
+    // Disegna zona di terra inferiore
     attron(COLOR_PAIR(5));
     for (int x = 1; x < GAME_WIDTH-1; x++) {
         for (int y = FLOOR_HEIGHT+1; y < GAME_HEIGHT-1; y++) {
@@ -89,7 +89,7 @@ void draw_game_borders() {
         }
     }
     
-    // Draw top land
+    // Disegna la zona di terra superiore
     for (int x = 1; x < GAME_WIDTH-1; x++) {
         for (int y = 1; y < 3; y++) {
             mvaddch(y, x, ACS_CKBOARD);
@@ -114,21 +114,21 @@ void init_dens(tana tane[]) {
 
 void draw_dens(tana tane[]) {
     for(int i = 0; i < NUM_TANE; i++) {
-        // Draw den border
+        // Disegna il bordo della tana
         attron(COLOR_PAIR(3));
         mvaddch(tane[i].y, tane[i].x - 1, ACS_LTEE);
         mvaddch(tane[i].y, tane[i].x + TANA_WIDTH, ACS_RTEE);
         attroff(COLOR_PAIR(3));
 
         if(tane[i].occupata) {
-            // Draw occupied den
+            // Disegna tana occupata
             attron(COLOR_PAIR(7));
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ACS_CKBOARD);
             }
             attroff(COLOR_PAIR(7));
         } else {
-            // Draw empty den
+            // Disegna tana vuota
             attron(COLOR_PAIR(6));
             for(int w = 0; w < TANA_WIDTH; w++) {
                 mvaddch(tane[i].y, tane[i].x + w, ' ');
@@ -138,7 +138,7 @@ void draw_dens(tana tane[]) {
     }
 }
 
-// Draw the entire game state atomically with double buffering
+// Disegna l'intero gaem state in maniera atomica con doppio buffering
 void draw_game_state(game_state* state) {
     static WINDOW* buffer_win = NULL;
     
@@ -152,11 +152,10 @@ void draw_game_state(game_state* state) {
     // Inizializza il buffer prima di disegnare
     werase(buffer_win);  // Uso werase invece di wclear per migliori performance
     
-    // Draw background elements to buffer
+    // Disegna elementi di sfondo nel buffer
     box(buffer_win, ACS_VLINE, ACS_HLINE);
     
-    // Draw borders on buffer_win
-    // Draw river borders
+    // Disegna i bordi in buffer_win
     wattron(buffer_win, COLOR_PAIR(3));
     mvwhline(buffer_win, 3, 1, ACS_HLINE, GAME_WIDTH-2);
     mvwaddch(buffer_win, 3, 0, ACS_LTEE);
@@ -166,7 +165,7 @@ void draw_game_state(game_state* state) {
     mvwaddch(buffer_win, FLOOR_HEIGHT, GAME_WIDTH-1, ACS_RTEE);
     wattroff(buffer_win, COLOR_PAIR(3));
     
-    // Draw game borders on buffer
+    // DIsegna i bordi di gioco in buffer_win
     wattron(buffer_win, COLOR_PAIR(5));
     for (int x = 1; x < GAME_WIDTH-1; x++) {
         for (int y = FLOOR_HEIGHT+1; y < GAME_HEIGHT-1; y++) {
@@ -180,7 +179,7 @@ void draw_game_state(game_state* state) {
     }
     wattroff(buffer_win, COLOR_PAIR(5));
     
-    // Draw dens on buffer
+    // Disegna le tane in buffer_win
     for(int i = 0; i < NUM_TANE; i++) {
         wattron(buffer_win, COLOR_PAIR(3));
         mvwaddch(buffer_win, state->tane[i].y, state->tane[i].x - 1, ACS_LTEE);
@@ -202,7 +201,7 @@ void draw_game_state(game_state* state) {
         }
     }
     
-    // Draw crocodiles on buffer
+    // Disegna i coccodrilli su buffer_win
     wattron(buffer_win, COLOR_PAIR(2));
     for (int i = 0; i < MAX_CROCODILES; i++) {
         if (state->crocodiles[i].active) {
@@ -227,7 +226,7 @@ void draw_game_state(game_state* state) {
     }
     wattroff(buffer_win, COLOR_PAIR(2));
     
-    // Draw bullets on buffer
+    // Disegna i proiettili nel buffer
     for (int i = 0; i < MAX_BULLETS; i++) {
         pthread_mutex_lock(&state->bullets[i].pos.mutex);
         if (state->bullets[i].pos.active && !state->bullets[i].pos.collision) {
@@ -239,7 +238,7 @@ void draw_game_state(game_state* state) {
         pthread_mutex_unlock(&state->bullets[i].pos.mutex);
     }
     
-    // Draw player on buffer
+    // Disegna il giocatore nel buffer
     wattron(buffer_win, COLOR_PAIR(1));
     pthread_mutex_lock(&state->player.mutex);
     if (state->player.active) {
@@ -258,7 +257,7 @@ void draw_game_state(game_state* state) {
     mvwprintw(buffer_win, LINES-1, COLS - 12, "SCORE: %d", state->score);
     mvwprintw(buffer_win, LINES-1, GAME_WIDTH-20, "Vite: %d", state->vite);
     
-    // Draw time bar on buffer
+    // Disegna il tempo nel buffer
     int bar_length = 20;
     int filled_length = (state->remaining_time * bar_length) / state->max_time;
     int x_start = 2;      
