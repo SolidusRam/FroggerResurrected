@@ -9,10 +9,10 @@
 #include "../include/game.h"
 #include "../include/utils.h"
 
-// Global state for signal handler
+// Stato globale per gestire il segnale
 game_state* global_state = NULL;
 
-// Signal handler for clean exit
+// Gestore del segnale per aver un'uscita più pulita
 void cleanup_handler(int signo) {
     if (global_state) {
         global_state->game_over = true;
@@ -20,20 +20,20 @@ void cleanup_handler(int signo) {
 }
 
 int main() {
-    // Initialize random number generator
+    // Inizializzazione del seed
     srand(time(NULL));
     
-    // Initialize ncurses
+    // Inizializzazione di ncurses
     initscr();
     start_color();
-    init_pair(1, COLOR_GREEN, COLOR_BLACK);  // Player color
-    init_pair(2, COLOR_RED, COLOR_BLACK);    // Crocodile color
-    init_pair(3, COLOR_BLUE, COLOR_CYAN);    // River borders
-    init_pair(5, COLOR_YELLOW, COLOR_RED);   // Land color
-    init_pair(6, COLOR_GREEN, COLOR_BLACK);  // Empty den
-    init_pair(7, COLOR_YELLOW, COLOR_GREEN); // Occupied den
+    init_pair(1, COLOR_GREEN, COLOR_BLACK);  // Colore del player
+    init_pair(2, COLOR_RED, COLOR_BLACK);    // Colore del coccodrillo
+    init_pair(3, COLOR_BLUE, COLOR_CYAN);    // bordi del fiume
+    init_pair(5, COLOR_YELLOW, COLOR_RED);   // Colore della terra
+    init_pair(6, COLOR_GREEN, COLOR_BLACK);  // tana vuota
+    init_pair(7, COLOR_YELLOW, COLOR_GREEN); // tana occupata
     
-    // Check terminal size
+    // Controllo dimensione del terminale
     if (LINES < GAME_HEIGHT || COLS < GAME_WIDTH) {
         endwin();
         fprintf(stderr, "Terminal too small. Needs at least %dx%d but got %dx%d\n", 
@@ -41,7 +41,7 @@ int main() {
         exit(1);
     }
     
-    // Set up terminal
+    // Setta il terminale
     resize_term(GAME_HEIGHT, GAME_WIDTH);
     noecho();
     cbreak();
@@ -67,18 +67,18 @@ int main() {
     // Disegno iniziale dello stato di gioco
     draw_game_state(&state);
     
-    // Create threads
+    // Creazione dei threads
     pthread_t player_tid, game_tid;
     pthread_t crocodile_tids[MAX_CROCODILES];
     crocodile_args* croc_args[MAX_CROCODILES];
     
-    // Start game thread
+    // Inizio game thread
     pthread_create(&game_tid, NULL, game_thread, &state);
     
-    // Start player thread
+    // Inizio player thread
     pthread_create(&player_tid, NULL, player_thread, &state);
     
-    // Start crocodile threads
+    // Inizio threads dei coccodrilli
     for (int i = 0; i < MAX_CROCODILES; i++) {
         croc_args[i] = malloc(sizeof(crocodile_args));
         croc_args[i]->state = &state;
@@ -86,7 +86,7 @@ int main() {
         pthread_create(&crocodile_tids[i], NULL, crocodile_thread, croc_args[i]);
     }
     
-    // CHiusura il thread di gioco
+    // CHiusura del thread di gioco
     pthread_join(game_tid, NULL);
     
     // Game over, clean up
