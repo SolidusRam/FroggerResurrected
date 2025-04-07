@@ -54,20 +54,20 @@ void rana(int pipeout,int pipein,int pausepipe)
         case ' ':
             struct position right_bullet = p;
             right_bullet.c = '*';
-            right_bullet.x = p.x + p.width; // Start from right edge of frog
+            right_bullet.x = p.x + p.width; // Parte dal bordo destro della rana
             
-            // Create left bullet
+            // Crea proiettile sinistro
             struct position left_bullet = p;
             left_bullet.c = '*';
-            left_bullet.x = p.x - 1; // Start from left edge of frog
+            left_bullet.x = p.x - 1; // Parte dal bordo sinistro della rana
 
-            // Launch right bullet
+            // Lancia il proiettile destro
             if(fork() == 0) {
                 bullet(pipeout, &right_bullet, 1);
                 _exit(0);
             }
             
-            // Launch left bullet  
+            // Lancia il proiettile sinsitro 
             if(fork() == 0) {
                 bullet(pipeout, &left_bullet, -1);
                 _exit(0);
