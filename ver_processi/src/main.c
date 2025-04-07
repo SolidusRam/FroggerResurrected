@@ -32,9 +32,9 @@ int main(){
     start_color();
     init_pair(1, COLOR_GREEN, COLOR_BLACK);//colore rana
     init_pair(2, COLOR_RED, COLOR_BLACK);//colore coccodrillo
-    init_pair(3, COLOR_BLUE, COLOR_CYAN);    // River borders
-    init_pair(6, COLOR_GREEN, COLOR_BLACK);  // Empty den
-    init_pair(7, COLOR_YELLOW, COLOR_GREEN); // Occupied den
+    init_pair(3, COLOR_BLUE, COLOR_CYAN);    // Bordi del fiume
+    init_pair(6, COLOR_GREEN, COLOR_BLACK);  // Tanan vuota
+    init_pair(7, COLOR_YELLOW, COLOR_GREEN); // Tana occupata
 
 
     //controllo dimensioni schermo
@@ -50,7 +50,7 @@ int main(){
     
     //inizializzo ncurses
     noecho();cbreak();nodelay(stdscr, TRUE);keypad(stdscr, TRUE);
-    curs_set(0);  // Hide cursor
+    curs_set(0);  // Nasconde il cursore
 
     box(stdscr, ACS_VLINE, ACS_HLINE);
 
@@ -104,7 +104,7 @@ int main(){
     printf("DEBUG: Game ended, starting cleanup\n");
     fflush(stdout);
 
-    // Kill crocodile processes
+    // Kill they processi coccodrilli
     for(int i = 0; i < num_coccodrilli; i++) {
         printf("DEBUG: Sending SIGTERM to crocodile %d (PID: %d)\n", i, pid_coccodrilli[i]);
         fflush(stdout);
@@ -115,7 +115,7 @@ int main(){
     fflush(stdout);
     kill(pid_rana, SIGTERM);
 
-    // Wait for processes to terminate
+    // Attende la terminazione dei processi
     for(int i = 0; i < num_coccodrilli; i++) {
         printf("DEBUG: Waiting for crocodile %d to terminate\n", i);
         fflush(stdout);
@@ -129,7 +129,7 @@ int main(){
     printf("DEBUG: Closing pipes\n");
     fflush(stdout);
     
-    // Close remaining pipes
+    // Chuide le pipe rimanenti
     close(pipefd[0]);
     close(pipefd[1]);
     close(pipeToFrog[0]);
