@@ -52,7 +52,7 @@ void* bullet_thread(void* arg) {
             break;
         }
         
-        // Create message for buffer
+        // Crea il messaggio per il buffer
         game_message msg;
         msg.type = MSG_BULLET;
         msg.id = bullet_id;
@@ -95,7 +95,7 @@ void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy
     if (bullet_idx >= 0) {
         pthread_mutex_lock(&state->bullets[bullet_idx].pos.mutex);
         
-        // Set bullet properties
+        // Imposta le proprietà dei proiettili
         state->bullets[bullet_idx].pos.c = is_enemy ? '@' : '*';
         state->bullets[bullet_idx].pos.x = x;
         state->bullets[bullet_idx].pos.y = y;
