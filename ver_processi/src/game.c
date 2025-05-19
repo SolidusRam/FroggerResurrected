@@ -8,14 +8,14 @@
 #include <fcntl.h>
 #include <signal.h>
 
-void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
+bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 {
     struct position p;
     srand(time(NULL));
     //la rana inizia dal centro dello schermo
     struct position rana_pos = {
         .c = '$', 
-        .x = GAME_WIDTH-3, 
+        .x = GAME_WIDTH/2, // Inizia al centro
         .y = GAME_HEIGHT-2, 
         .width = 2, 
         .height = 5,
@@ -197,11 +197,24 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     }
                     else{
                         game_over = true;
+                        clear();
                         mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
-                        score=0;
+                        mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
+                        mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                         refresh();
-                        napms(2000);
-                        break;
+                        
+                        // Aspetta la risposta dell'utente
+                        int risposta;
+                        do {
+                            risposta = getch();
+                        } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                        
+                        if (risposta == 's' || risposta == 'S') {
+                            *vite = 3; // Resetta le vite per la nuova partita
+                            return true; // Segnala che il giocatore vuole giocare ancora
+                        } else {
+                            return false; // Segnala che il giocatore vuole uscire
+                        }
                     }
 
                 }else{
@@ -280,11 +293,33 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     continue;
                 } else {
                     game_over = true;
+                    clear();
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                     mvprintw((LINES/2)+1, COLS/2-15, "SCORE FINALE: %d", score);
+                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                     refresh();
-                    napms(2000);
-                    break;
+                    
+                    // Cambia modalità input per leggere correttamente la risposta dell'utente
+                    nocbreak(); // Disattiva la modalità cbreak
+                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
+                    nodelay(stdscr, FALSE); // Modalità bloccante
+                    flushinp(); // Pulisce il buffer di input
+                    
+                    // Aspetta la risposta dell'utente
+                    int risposta;
+                    do {
+                        risposta = getch();
+                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                    
+                    // Ripristina la modalità di input per il gioco
+                    nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
+                    
+                    if (risposta == 's' || risposta == 'S') {
+                        *vite = 3; // Resetta le vite per la nuova partita
+                        return true; // Segnala che il giocatore vuole giocare ancora
+                    } else {
+                        return false; // Segnala che il giocatore vuole uscire
+                    }
                 }
             }
             else if(check_den_collision(&rana_pos, tane)) {
@@ -302,9 +337,31 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 if(tane_occupate == NUM_TANE) {
                     clear();
                     mvprintw(LINES/2, COLS/2-10, "HAI VINTO!");
+                    mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
+                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                     refresh();
-                    sleep(2);
-                    break;
+                    
+                    // Cambia modalità input per leggere correttamente la risposta dell'utente
+                    nocbreak(); // Disattiva la modalità cbreak
+                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
+                    nodelay(stdscr, FALSE); // Modalità bloccante
+                    flushinp(); // Pulisce il buffer di input
+                    
+                    // Aspetta la risposta dell'utente
+                    int risposta;
+                    do {
+                        risposta = getch();
+                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                    
+                    // Ripristina la modalità di input per il gioco
+                    nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
+                    
+                    if (risposta == 's' || risposta == 'S') {
+                        *vite = 3; // Resetta le vite per la nuova partita
+                        return true; // Segnala che il giocatore vuole giocare ancora
+                    } else {
+                        return false; // Segnala che il giocatore vuole uscire
+                    }
                 }
             }
         }
@@ -355,11 +412,30 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     break; // Esce dal loop di controllo del proiettile
                 } else {
                     game_over = true;
+                    clear();
                     mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
                     mvprintw((LINES / 2) + 1, COLS / 2 - 10, "SCORE FINALE: %d", score);
+                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                     refresh();
-                    napms(2000);
-                    return; // Esce dalla funzione di gioco
+                    
+                    // Cambia modalità input per leggere correttamente la risposta dell'utente
+                    nocbreak(); // Disattiva la modalità cbreak
+                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
+                    nodelay(stdscr, FALSE); // Modalità bloccante
+                    flushinp(); // Pulisce il buffer di input
+                    
+                    // Aspetta la risposta dell'utente
+                    int risposta;
+                    do {
+                        risposta = getch();
+                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                    
+                    if (risposta == 's' || risposta == 'S') {
+                        *vite = 3; // Resetta le vite per la nuova partita
+                        return true; // Segnala che il giocatore vuole giocare ancora
+                    } else {
+                        return false; // Segnala che il giocatore vuole uscire
+                    }
                 }
             }
         }
@@ -396,10 +472,24 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 
             // Controlla se il tempo è finito
             if (remaining_time <= 0) {
+                clear();
                 mvprintw(LINES / 2, COLS / 2 - 10, "TEMPO SCADUTO!");
+                mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
+                mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                 refresh();
-                napms(2000);
-                game_over = true;
+                
+                // Aspetta la risposta dell'utente
+                int risposta;
+                do {
+                    risposta = getch();
+                } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                
+                if (risposta == 's' || risposta == 'S') {
+                    *vite = 3; // Resetta le vite per la nuova partita
+                    return true; // Segnala che il giocatore vuole giocare ancora
+                } else {
+                    return false; // Segnala che il giocatore vuole uscire
+                }
             }
         }
 
@@ -419,6 +509,10 @@ void game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         draw_frog(&rana_pos);
         refresh();
     }
+    
+    // Se il gioco termina normalmente (non vittoria o game over), 
+    // restituisci false per indicare che si vuole uscire dal gioco
+    return false;
 }
 
 bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction) {

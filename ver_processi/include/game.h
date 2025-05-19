@@ -49,7 +49,7 @@ struct tana {
     bool occupata;
 };
 
-void game(int,int,int,int*,int);
+bool game(int,int,int,int*,int);
 
 bool rana_coccodrillo(struct position *rana_pos, struct position crocodile_positions[], int num_coccodrilli, int *direction);
 
