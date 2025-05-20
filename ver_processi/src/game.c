@@ -478,11 +478,20 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
                 refresh();
                 
+                // Cambia modalità input per leggere correttamente la risposta dell'utente
+                nocbreak(); // Disattiva la modalità cbreak
+                cbreak(); // La riattivo per assicurarmi che sia in questa modalità
+                nodelay(stdscr, FALSE); // Modalità bloccante
+                flushinp(); // Pulisce il buffer di input
+                
                 // Aspetta la risposta dell'utente
                 int risposta;
                 do {
                     risposta = getch();
                 } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+                
+                // Ripristina la modalità di input per il gioco
+                nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
                 
                 if (risposta == 's' || risposta == 'S') {
                     *vite = 3; // Resetta le vite per la nuova partita
