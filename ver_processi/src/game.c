@@ -8,6 +8,37 @@
 #include <fcntl.h>
 #include <signal.h>
 
+// Funzione per gestire la fine del gioco (game over, vittoria, tempo scaduto)
+bool handle_game_end(int *vite, int score, const char *message) {
+    clear();
+    mvprintw(LINES / 2, COLS / 2 - 10, "%s", message);
+    mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
+    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
+    refresh();
+    
+    // Cambia modalità input per leggere correttamente la risposta dell'utente
+    nocbreak(); // Disattiva la modalità cbreak
+    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
+    nodelay(stdscr, FALSE); // Modalità bloccante
+    flushinp(); // Pulisce il buffer di input
+    
+    // Aspetta la risposta dell'utente
+    int risposta;
+    do {
+        risposta = getch();
+    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
+    
+    // Ripristina la modalità di input per il gioco
+    nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
+    
+    if (risposta == 's' || risposta == 'S') {
+        *vite = 3; // Resetta le vite per la nuova partita
+        return true; // Segnala che il giocatore vuole giocare ancora
+    } else {
+        return false; // Segnala che il giocatore vuole uscire
+    }
+}
+
 bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 {
     struct position p;
@@ -196,27 +227,8 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                         continue;
                     }
                     else{
-                        game_over = true;
-                        clear();
-                        mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
-                        mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
-                        mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
-                        refresh();
-                        
-                        // Aspetta la risposta dell'utente
-                        int risposta;
-                        do {
-                            risposta = getch();
-                        } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
-                        
-                        if (risposta == 's' || risposta == 'S') {
-                            *vite = 3; // Resetta le vite per la nuova partita
-                            return true; // Segnala che il giocatore vuole giocare ancora
-                        } else {
-                            return false; // Segnala che il giocatore vuole uscire
-                        }
+                        return handle_game_end(vite, score, "GAME OVER!");
                     }
-
                 }else{
                     rana_pos = p; // Aggiorna la posizione se non si è su un coccodrillo
                 }
@@ -292,34 +304,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     
                     continue;
                 } else {
-                    game_over = true;
-                    clear();
-                    mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
-                    mvprintw((LINES/2)+1, COLS/2-15, "SCORE FINALE: %d", score);
-                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
-                    refresh();
-                    
-                    // Cambia modalità input per leggere correttamente la risposta dell'utente
-                    nocbreak(); // Disattiva la modalità cbreak
-                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
-                    nodelay(stdscr, FALSE); // Modalità bloccante
-                    flushinp(); // Pulisce il buffer di input
-                    
-                    // Aspetta la risposta dell'utente
-                    int risposta;
-                    do {
-                        risposta = getch();
-                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
-                    
-                    // Ripristina la modalità di input per il gioco
-                    nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
-                    
-                    if (risposta == 's' || risposta == 'S') {
-                        *vite = 3; // Resetta le vite per la nuova partita
-                        return true; // Segnala che il giocatore vuole giocare ancora
-                    } else {
-                        return false; // Segnala che il giocatore vuole uscire
-                    }
+                    return handle_game_end(vite, score, "GAME OVER!");
                 }
             }
             else if(check_den_collision(&rana_pos, tane)) {
@@ -335,33 +320,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 write(pipeToFrog, &rana_pos, sizeof(struct position));
                 
                 if(tane_occupate == NUM_TANE) {
-                    clear();
-                    mvprintw(LINES/2, COLS/2-10, "HAI VINTO!");
-                    mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
-                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
-                    refresh();
-                    
-                    // Cambia modalità input per leggere correttamente la risposta dell'utente
-                    nocbreak(); // Disattiva la modalità cbreak
-                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
-                    nodelay(stdscr, FALSE); // Modalità bloccante
-                    flushinp(); // Pulisce il buffer di input
-                    
-                    // Aspetta la risposta dell'utente
-                    int risposta;
-                    do {
-                        risposta = getch();
-                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
-                    
-                    // Ripristina la modalità di input per il gioco
-                    nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
-                    
-                    if (risposta == 's' || risposta == 'S') {
-                        *vite = 3; // Resetta le vite per la nuova partita
-                        return true; // Segnala che il giocatore vuole giocare ancora
-                    } else {
-                        return false; // Segnala che il giocatore vuole uscire
-                    }
+                    return handle_game_end(vite, score, "HAI VINTO!");
                 }
             }
         }
@@ -411,31 +370,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                     
                     break; // Esce dal loop di controllo del proiettile
                 } else {
-                    game_over = true;
-                    clear();
-                    mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
-                    mvprintw((LINES / 2) + 1, COLS / 2 - 10, "SCORE FINALE: %d", score);
-                    mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
-                    refresh();
-                    
-                    // Cambia modalità input per leggere correttamente la risposta dell'utente
-                    nocbreak(); // Disattiva la modalità cbreak
-                    cbreak(); // La riattivo per assicurarmi che sia in questa modalità
-                    nodelay(stdscr, FALSE); // Modalità bloccante
-                    flushinp(); // Pulisce il buffer di input
-                    
-                    // Aspetta la risposta dell'utente
-                    int risposta;
-                    do {
-                        risposta = getch();
-                    } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
-                    
-                    if (risposta == 's' || risposta == 'S') {
-                        *vite = 3; // Resetta le vite per la nuova partita
-                        return true; // Segnala che il giocatore vuole giocare ancora
-                    } else {
-                        return false; // Segnala che il giocatore vuole uscire
-                    }
+                    return handle_game_end(vite, score, "GAME OVER!");
                 }
             }
         }
@@ -472,33 +407,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 
             // Controlla se il tempo è finito
             if (remaining_time <= 0) {
-                clear();
-                mvprintw(LINES / 2, COLS / 2 - 10, "TEMPO SCADUTO!");
-                mvprintw((LINES/2) + 1, COLS/2-15, "SCORE FINALE: %d", score);
-                mvprintw((LINES/2) + 3, COLS/2-15, "Vuoi giocare ancora? (s/n)");
-                refresh();
-                
-                // Cambia modalità input per leggere correttamente la risposta dell'utente
-                nocbreak(); // Disattiva la modalità cbreak
-                cbreak(); // La riattivo per assicurarmi che sia in questa modalità
-                nodelay(stdscr, FALSE); // Modalità bloccante
-                flushinp(); // Pulisce il buffer di input
-                
-                // Aspetta la risposta dell'utente
-                int risposta;
-                do {
-                    risposta = getch();
-                } while (risposta != 's' && risposta != 'S' && risposta != 'n' && risposta != 'N');
-                
-                // Ripristina la modalità di input per il gioco
-                nodelay(stdscr, TRUE); // Ritorna alla modalità non bloccante
-                
-                if (risposta == 's' || risposta == 'S') {
-                    *vite = 3; // Resetta le vite per la nuova partita
-                    return true; // Segnala che il giocatore vuole giocare ancora
-                } else {
-                    return false; // Segnala che il giocatore vuole uscire
-                }
+                return handle_game_end(vite, score, "TEMPO SCADUTO!");
             }
         }
 
