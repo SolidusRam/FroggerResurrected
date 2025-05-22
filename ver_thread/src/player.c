@@ -93,7 +93,9 @@ void* player_thread(void* arg) {
                 break;
                 
             case 'Q':  // Quit game
+                pthread_mutex_lock(&state->game_mutex);
                 state->game_over = true;
+                pthread_mutex_unlock(&state->game_mutex);
                 break;
         }
         

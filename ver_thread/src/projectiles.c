@@ -3,13 +3,16 @@
 #include <stdlib.h>
 
 void* bullet_thread(void* arg) {
+    // Copiamo i valori per sicurezza e liberiamo la memoria degli args subito
     bullet_args* args = (bullet_args*)arg;
     game_state* state = args->state;
     int bullet_id = args->bullet_id;
     
+    // Liberiamo la memoria degli argomenti
+    free(args);
+    
     // Finche il proiettile è attivo
     while (1) {
-
         if (state->game_over) {
             pthread_mutex_lock(&state->bullets[bullet_id].pos.mutex);
             state->bullets[bullet_id].pos.active = false;
@@ -84,7 +87,6 @@ void* bullet_thread(void* arg) {
     // Invia il messaggio finale
     buffer_put(&state->event_buffer, &final_msg);
     
-    free(arg);
     return NULL;
 }
 
@@ -93,6 +95,14 @@ void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy
     
     int bullet_idx = find_free_bullet_slot(state);
     if (bullet_idx >= 0) {
+        // Creazione thread arguments prima di usarli
+        bullet_args* args = malloc(sizeof(bullet_args));
+        if (args == NULL) {
+            // Errore di allocazione memoria
+            pthread_mutex_unlock(&state->game_mutex);
+            return;
+        }
+        
         pthread_mutex_lock(&state->bullets[bullet_idx].pos.mutex);
         
         // Imposta le proprietà dei proiettili
@@ -108,11 +118,11 @@ void create_bullet(game_state* state, int x, int y, int direction, bool is_enemy
         
         pthread_mutex_unlock(&state->bullets[bullet_idx].pos.mutex);
         
-        // Creazione thread arguments
-        bullet_args* args = malloc(sizeof(bullet_args));
+        // Inizializza gli argomenti
         args->state = state;
         args->bullet_id = bullet_idx;
         
+        // Ora crea il thread con gli argomenti già inizializzati
         pthread_create(&state->bullets[bullet_idx].thread_id, NULL, bullet_thread, args);
     }
     

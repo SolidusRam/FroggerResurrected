@@ -127,20 +127,65 @@ void init_game_state(game_state* state) {
 
 // Clean up 
 void destroy_game_state(game_state* state) {
-    pthread_mutex_destroy(&state->game_mutex);
-    pthread_mutex_destroy(&state->screen_mutex);
-    pthread_cond_destroy(&state->game_update_cond);
+    // La distruzione deve avvenire solo quando tutti i thread
+    // hanno terminato di utilizzare queste risorse, quindi
+    // impostiamo game_over e aspettiamo che i thread si accorgano
+    state->game_over = true;
     
-    pthread_mutex_destroy(&state->player.mutex);
+    // Attesa per consentire ai thread di notare game_over
+    usleep(200000); // 200ms
+    
+    // Svuota il buffer prima di distruggerlo per evitare
+    // thread bloccati su variabili di condizione
+    pthread_mutex_lock(&state->event_buffer.mutex);
+    
+    // Cancella eventuali thread in attesa sul buffer
+    pthread_cond_broadcast(&state->event_buffer.not_full);
+    pthread_cond_broadcast(&state->event_buffer.not_empty);
+    
+    pthread_mutex_unlock(&state->event_buffer.mutex);
+    
+    // Attesa per consentire ai thread di uscire dalle attese
+    usleep(100000); // 100ms
+    
+    // Ora distruggi gli altri mutex in ordine inverso di creazione
+    for (int i = 0; i < MAX_BULLETS; i++) {
+        // Controlla che il mutex non sia già in uso
+        if (pthread_mutex_trylock(&state->bullets[i].pos.mutex) == 0) {
+            pthread_mutex_unlock(&state->bullets[i].pos.mutex);
+            pthread_mutex_destroy(&state->bullets[i].pos.mutex);
+        }
+    }
     
     for (int i = 0; i < MAX_CROCODILES; i++) {
-        pthread_mutex_destroy(&state->crocodiles[i].mutex);
+        // Controlla che il mutex non sia già in uso
+        if (pthread_mutex_trylock(&state->crocodiles[i].mutex) == 0) {
+            pthread_mutex_unlock(&state->crocodiles[i].mutex);
+            pthread_mutex_destroy(&state->crocodiles[i].mutex);
+        }
     }
     
-    for (int i = 0; i < MAX_BULLETS; i++) {
-        pthread_mutex_destroy(&state->bullets[i].pos.mutex);
+    // Distruggi il mutex del player
+    if (pthread_mutex_trylock(&state->player.mutex) == 0) {
+        pthread_mutex_unlock(&state->player.mutex);
+        pthread_mutex_destroy(&state->player.mutex);
     }
-
+    
+    // Distruggi le variabili di condizione
+    pthread_cond_destroy(&state->game_update_cond);
+    
+    // Distruggi i mutex globali
+    if (pthread_mutex_trylock(&state->screen_mutex) == 0) {
+        pthread_mutex_unlock(&state->screen_mutex);
+        pthread_mutex_destroy(&state->screen_mutex);
+    }
+    
+    if (pthread_mutex_trylock(&state->game_mutex) == 0) {
+        pthread_mutex_unlock(&state->game_mutex);
+        pthread_mutex_destroy(&state->game_mutex);
+    }
+    
+    // Distruggi il buffer per ultimo
     buffer_destroy(&state->event_buffer);
 }
 
