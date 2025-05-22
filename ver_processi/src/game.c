@@ -1,9 +1,12 @@
 #include "../include/game.h"
 #include "../include/utils.h"
+#include "../include/audio.h"
 #include <stdlib.h>
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/ipc.h> // Added for IPC_RMID
+#include <sys/shm.h> // Added for shmctl, shmdt
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
@@ -39,8 +42,21 @@ bool handle_game_end(int *vite, int score, const char *message) {
     }
 }
 
+void destroy_shared_memory(int shmid, void *shmaddr) {
+    if (shmdt(shmaddr) == -1) {
+        perror("shmdt");
+    }
+    if (shmctl(shmid, IPC_RMID, NULL) == -1) {
+        perror("shmctl IPC_RMID");
+    }
+    cleanup_audio(); // Added to terminate audio processes
+}
+
 bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
 {
+    // Avvia la musica di sottofondo
+    toggle_background_music(true);
+
     struct position p;
     srand(time(NULL));
     //la rana inizia dal centro dello schermo
@@ -206,6 +222,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 //se la rana non è su un coccodrillo, controllo se e caduta in acqua
                 if(frog_on_the_water(&rana_pos)){
                      //resetta lo score e riduce di 1 le vite
+                    play_sound(SOUND_SPLASH); // Frog fell in water
                     score=0;
                     (*vite)--;
                     max_height_reached = GAME_HEIGHT-2; // Resetta l'altezza MAX
@@ -285,6 +302,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
         if (rana_pos.y <= 1) { 
             if (is_invalid_top_area(&rana_pos, tane)) {
                 // La rana prova ad entrare in una tana occupata o zona off limits
+                play_sound(SOUND_SPLASH); // Frog hit invalid area
                 (*vite)--;
                 max_height_reached = GAME_HEIGHT-2; // Reset max height
                 
@@ -308,6 +326,9 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
                 }
             }
             else if(check_den_collision(&rana_pos, tane)) {
+                // Riproduci il suono della tana conquistata
+                play_sound(SOUND_TANA_ENTER);
+                
                 score+=100;
                 tane_occupate++;
                 //reset del timer
@@ -330,6 +351,7 @@ bool game(int pipein,int pipeToFrog,int num_coccodrilli,int *vite,int pausepipe)
        //controllo se la rana è stata colpita
         for(int i=0;i<MAX_BULLETS;i++){
             if(bullets[i].c=='@'&&bullets[i].x==rana_pos.x&&bullets[i].y==rana_pos.y&& !bullets[i].collision){
+                play_sound(SOUND_SPLASH); // Frog hit by projectile
                 score=0;
                 (*vite)--;
                 if(*vite > 0) {

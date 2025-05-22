@@ -1,4 +1,5 @@
 #include "../include/game.h"
+#include "../include/audio.h" // Added
 #include <unistd.h>
 #include <stdlib.h>
 
@@ -85,6 +86,7 @@ void* player_thread(void* arg) {
                     1,                                     
                     false                                
                 );
+                play_sound(SOUND_SHOOT); // Added sound for shooting
                 break;
                 
             case 'q':  // Cheat code per il salto

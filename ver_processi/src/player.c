@@ -1,5 +1,6 @@
 #include "../include/player.h"
 #include "../include/projectiles.h"
+#include "../include/audio.h"
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
@@ -61,6 +62,9 @@ void rana(int pipeout,int pipein,int pausepipe)
             left_bullet.c = '*';
             left_bullet.x = p.x - 1; // Parte dal bordo sinistro della rana
 
+            // Riproduci il suono dello sparo
+            play_sound(SOUND_SHOOT);
+            
             // Lancia il proiettile destro
             if(fork() == 0) {
                 bullet(pipeout, &right_bullet, 1);
