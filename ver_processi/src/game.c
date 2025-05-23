@@ -5,11 +5,13 @@
 #include <time.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/ipc.h> // Added for IPC_RMID
-#include <sys/shm.h> // Added for shmctl, shmdt
 #include <unistd.h>
 #include <fcntl.h>
 #include <signal.h>
+
+// Librerie usate solo per audio
+#include <sys/ipc.h> 
+#include <sys/shm.h> 
 
 // Funzione per gestire la fine del gioco (game over, vittoria, tempo scaduto)
 bool handle_game_end(int *vite, int score, const char *message) {

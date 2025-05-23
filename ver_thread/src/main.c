@@ -5,7 +5,7 @@
 #include <pthread.h>
 #include <ncurses.h>
 #include <signal.h>
-#include <ctype.h>  // Per la funzione toupper
+#include <ctype.h>
 #include <string.h>
 
 #include "../include/game.h"

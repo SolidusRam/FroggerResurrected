@@ -9,10 +9,7 @@ typedef enum {
     SOUND_BACKGROUND,
     SOUND_SHOOT,
     SOUND_TANA_ENTER,
-    SOUND_SPLASH,
-    SOUND_COLLISION,
-    SOUND_GAME_OVER,
-    SOUND_VICTORY
+    SOUND_SPLASH
 } SoundType;
 
 // Riproduci un suono specifico
