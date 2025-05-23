@@ -322,52 +322,93 @@ void* game_thread(void* arg) {
 
         // Collisione con le tane
         pthread_mutex_lock(&state->player.mutex);
-        if (state->player.y <= 1) { // Player is at den level
+        if (state->player.y <= 1) {
             bool den_reached = false;
-            bool invalid_den = false;
-            for (int i = 0; i < NUM_TANE; ++i) {
-                // Assuming simple collision logic: player's x is within den's x range
-                int den_x_start = i * (TANA_WIDTH + 1) + 1; // +1 for spacing between dens
-                int den_x_end = den_x_start + TANA_WIDTH;
-                if (state->player.x >= den_x_start && state->player.x < den_x_end) {
+            bool needs_reset = false;
+            bool game_won = false;
+            
+            // Trova il centro della rana
+            int frog_center_x = state->player.x + (state->player.width / 2);
+            
+            for(int i = 0; i < NUM_TANE; i++) {
+                // Calcola la posizione della tana usando la stessa logica di init_dens
+                int usable_width = GAME_WIDTH - 2;
+                int den_space = (usable_width - (NUM_TANE * TANA_WIDTH)) / (NUM_TANE + 1);
+                int tana_x = 1 + den_space + i * (TANA_WIDTH + den_space);
+                
+                // Controlla se il centro della rana è nella tana
+                if (frog_center_x >= tana_x && frog_center_x < tana_x + TANA_WIDTH) {
                     if (!state->tane[i].occupata) {
-                        state->tane[i].occupata = true;
-                        den_reached = true;
-                        play_sound(SOUND_TANA_ENTER);
+                        // Tana libera - occupala
                         pthread_mutex_lock(&state->game_mutex);
+                        state->tane[i].occupata = true;
                         state->score += 100;
                         state->tane_occupate++;
+                        state->remaining_time = state->max_time;
+                        max_height_reached = GAME_HEIGHT-2;
+                        den_reached = true;
+                        
+                        // Controlla la condizione di vittoria
                         if (state->tane_occupate == NUM_TANE) {
-                            // Victory condition
-                            state->game_over = true; // Or trigger a victory sequence
+                            game_won = true;
+                        } else {
+                            needs_reset = true;
                         }
                         pthread_mutex_unlock(&state->game_mutex);
-                        reset_player_safely(state);
+                        break;
                     } else {
-                        invalid_den = true; // Tried to enter an occupied den
+                        // Tana occupata - tratta come collisione invalida
+                        den_reached = false;
+                        break;
                     }
-                    break; // Player can only be in one den's x-range at a time
                 }
             }
-            if (!den_reached && state->player.y <=1) { // If at den level but not in a valid, free den
-                 // This includes hitting wall between dens or an occupied den
-                invalid_den = true; 
-            }
-
-            if (invalid_den){
-                play_sound(SOUND_SPLASH); // Hit wall or occupied den
+            
+            // Rilascia il mutex del player prima di fare operazioni che potrebbero bloccarlo
+            pthread_mutex_unlock(&state->player.mutex);
+            
+            if (game_won) {
+                // Vittoria
+                pthread_mutex_lock(&state->screen_mutex);
+                clear();
+                mvprintw(LINES/2, COLS/2-10, "HAI VINTO!");
+                refresh();
+                pthread_mutex_unlock(&state->screen_mutex);
+                
+                pthread_mutex_lock(&state->game_mutex);
+                state->game_over = true;
+                pthread_mutex_unlock(&state->game_mutex);
+                napms(2000);
+            } else if (needs_reset) {
+                // Reset normale dopo aver occupato una tana
+                reset_player_safely(state);
+            } else if (!den_reached) {
+                // Tana non valida o occupata - togli una vita
                 pthread_mutex_lock(&state->game_mutex);
                 state->vite--;
                 max_height_reached = GAME_HEIGHT-2;
-                if (state->vite > 0) {
+                bool still_alive = state->vite > 0;
+                pthread_mutex_unlock(&state->game_mutex);
+                
+                if (still_alive) {
                     reset_player_safely(state);
                 } else {
+                    // Game over
+                    pthread_mutex_lock(&state->game_mutex);
+                    pthread_mutex_lock(&state->screen_mutex);
+                    mvprintw(LINES/2, COLS/2-10, "GAME OVER!");
+                    mvprintw((LINES/2) + 1, COLS/2-10, "SCORE FINALE: %d", state->score);
+                    refresh();
+                    pthread_mutex_unlock(&state->screen_mutex);
+                    
                     state->game_over = true;
+                    pthread_mutex_unlock(&state->game_mutex);
+                    napms(2000);
                 }
-                pthread_mutex_unlock(&state->game_mutex);
             }
+        } else {
+            pthread_mutex_unlock(&state->player.mutex);
         }
-        pthread_mutex_unlock(&state->player.mutex);
         
         // Controllo per il proiettile della rana 
         for (int i = 0; i < MAX_BULLETS; i++) {
