@@ -291,34 +291,6 @@ void* game_thread(void* arg) {
             }
         }
              
-        // Collisione con proiettili nemici (esempio, adattare alla logica effettiva)
-        for (int i = 0; i < MAX_BULLETS; ++i) {
-            pthread_mutex_lock(&state->bullets[i].pos.mutex);
-            if (state->bullets[i].pos.active && state->bullets[i].is_enemy) {
-                // Check collision with player_copy
-                if (player_copy.x < state->bullets[i].pos.x + state->bullets[i].pos.width &&
-                    player_copy.x + player_copy.width > state->bullets[i].pos.x &&
-                    player_copy.y < state->bullets[i].pos.y + state->bullets[i].pos.height &&
-                    player_copy.y + player_copy.height > state->bullets[i].pos.y) {
-                    
-                    state->bullets[i].pos.active = false; // Disattiva proiettile
-                    pthread_mutex_unlock(&state->bullets[i].pos.mutex);
-
-                    pthread_mutex_lock(&state->game_mutex);
-                    play_sound(SOUND_SPLASH); // Frog hit by enemy bullet
-                    state->vite--;
-                    max_height_reached = GAME_HEIGHT-2;
-                    if (state->vite > 0) {
-                        reset_player_safely(state);
-                    } else {
-                        state->game_over = true;
-                    }
-                    pthread_mutex_unlock(&state->game_mutex);
-                    break; // Esce dal loop dei proiettili, una collisione per frame è sufficiente
-                }
-            }
-            pthread_mutex_unlock(&state->bullets[i].pos.mutex);
-        }
 
         // Collisione con le tane
         pthread_mutex_lock(&state->player.mutex);
