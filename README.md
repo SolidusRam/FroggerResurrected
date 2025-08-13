@@ -37,3 +37,4 @@ ESPANSIONE MULTIPLAYER
 - Secondo client: gestisci 2 player.
 - Interpolazione leggera e heartbeat.
 - Pulizia: riconnessione, game over, scoreboard.
+- Semplice stampa di gara fra i 2 giocatori

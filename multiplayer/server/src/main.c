@@ -10,9 +10,11 @@
 
 #include "../../shared/include/protocol.h"
 #include "../../shared/include/game_types.h"
+#include "../include/game.h"
 
 #define SERVER_PORT 5000
 #define BACKLOG 8
+#define MAX_CLIENTS 2
 
 static int listen_tcp(uint16_t port) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -27,88 +29,81 @@ static int listen_tcp(uint16_t port) {
     return fd;
 }
 
-static void handle_client(int cfd, uint32_t player_id) {
-    // Handshake: invia WELCOME
-    msg_header_t hdr = { .version=PROTOCOL_VERSION, .type=MSG_WELCOME, .length=sizeof(msg_welcome_t), .seq=1, .tick=0 };
-    msg_welcome_t w = { .player_id = player_id };
-    if (send_frame(cfd, &hdr, &w, sizeof(w)) < 0) { 
-        perror("send WELCOME");
-        close(cfd); 
-        return; 
-    }
-    printf("[server] WELCOME sent to player %u\n", player_id);
+static void serve_loop(int lfd) {
+    int clients[MAX_CLIENTS]; memset(clients, -1, sizeof(clients));
+    uint32_t pids[MAX_CLIENTS]; memset(pids, 0, sizeof(pids));
+    server_game_t game; game_init(&game);
 
-    // Dimostrazione didattica: piccolo loop a 5 Hz che invia snapshot
-    int px = 0, py = 10; // posizione giocatore controllata dagli INPUT del client
-    for (uint32_t tick = 0; tick < 1000; ++tick) {
-        // 1) Leggi eventuali INPUT dal client senza bloccare (select con timeout 0)
-        fd_set rfds; FD_ZERO(&rfds); FD_SET(cfd, &rfds);
-        struct timeval tv; tv.tv_sec = 0; tv.tv_usec = 0;
-        int r = select(cfd+1, &rfds, NULL, NULL, &tv);
-        if (r > 0 && FD_ISSET(cfd, &rfds)) {
-            msg_header_t in_h = {0};
-            unsigned char ibuf[256];
-            uint16_t ilen = 0;
-            if (recv_frame(cfd, &in_h, ibuf, sizeof(ibuf), &ilen) < 0) {
-                printf("[server] client %u disconnected or read error\n", player_id);
-                break;
+    for (;;) {
+        // Build fd sets
+        fd_set rfds; FD_ZERO(&rfds); FD_SET(lfd, &rfds);
+        int maxfd = lfd;
+        for (int i = 0; i < MAX_CLIENTS; ++i) {
+            if (clients[i] >= 0) { FD_SET(clients[i], &rfds); if (clients[i] > maxfd) maxfd = clients[i]; }
+        }
+        struct timeval tv; tv.tv_sec = 0; tv.tv_usec = 200000; // 200ms tick
+        int r = select(maxfd+1, &rfds, NULL, NULL, &tv);
+        if (r < 0) continue;
+
+        // New connection
+        if (FD_ISSET(lfd, &rfds)) {
+            int cfd = accept(lfd, NULL, NULL);
+            if (cfd >= 0) {
+                int slot = -1; for (int i = 0; i < MAX_CLIENTS; ++i) if (clients[i] < 0) { slot = i; break; }
+                if (slot >= 0) {
+                    uint32_t pid = (uint32_t)(rand() & 0x7fffffff);
+                    if (game_add_player(&game, pid) == 0) {
+                        clients[slot] = cfd; pids[slot] = pid;
+                        printf("[server] client connected (fd=%d) -> player %u (slot %d)\n", cfd, pid, slot);
+                        msg_header_t hdr = { .version=PROTOCOL_VERSION, .type=MSG_WELCOME, .length=sizeof(msg_welcome_t), .seq=1, .tick=game.tick };
+                        msg_welcome_t w = { .player_id = pid };
+                        send_frame(cfd, &hdr, &w, sizeof(w));
+                    } else {
+                        close(cfd);
+                    }
+                } else {
+                    close(cfd);
+                }
+            }
+        }
+
+        // Read inputs
+        for (int i = 0; i < MAX_CLIENTS; ++i) {
+            int fd = clients[i]; if (fd < 0) continue;
+            if (!FD_ISSET(fd, &rfds)) continue;
+            msg_header_t in_h = {0}; unsigned char ibuf[256]; uint16_t ilen=0;
+            if (recv_frame(fd, &in_h, ibuf, sizeof(ibuf), &ilen) < 0) {
+                printf("[server] client %u disconnected\n", pids[i]);
+                game_remove_player(&game, pids[i]);
+                close(fd); clients[i] = -1; pids[i] = 0; continue;
             }
             if (in_h.type == MSG_INPUT && ilen == sizeof(msg_input_t)) {
-                msg_input_t in = {0};
-                memcpy(&in, ibuf, sizeof(in));
-                int dx = 0, dy = 0;
-                if (in.buttons & IN_LEFT)  dx -= 1;
-                if (in.buttons & IN_RIGHT) dx += 1;
-                if (in.buttons & IN_UP)    dy -= 1;
-                if (in.buttons & IN_DOWN)  dy += 1;
-                px += dx; py += dy;
-                if (px < 0) px = 0; if (px >= GAME_WIDTH) px = GAME_WIDTH-1;
-                if (py < 0) py = 0; if (py >= GAME_HEIGHT) py = GAME_HEIGHT-1;
-                printf("[server] INPUT from player %u buttons=%u -> pos=(%d,%d)\n", player_id, (unsigned)in.buttons, px, py);
+                msg_input_t in; memcpy(&in, ibuf, sizeof(in));
+                game_apply_input(&game, pids[i], &in);
             }
         }
 
-        // 2) Prepara e invia lo SNAPSHOT per il tick corrente
-        game_snapshot_t snap = {0};
-        snap.tick = tick;
-        snap.num_players = 1;
-        snap.players[0].id = (int32_t)player_id;
-        snap.players[0].connected = true;
-        snap.players[0].lives = 3;
-        snap.players[0].score = (int32_t)(tick * 10);
-        snap.players[0].ent.id = (int32_t)player_id;
-        snap.players[0].ent.active = true;
-        snap.players[0].ent.box.w = 1;
-        snap.players[0].ent.box.h = 1;
-        snap.players[0].ent.box.x = px;
-        snap.players[0].ent.box.y = py; // riga controllata dagli input
-
-        msg_header_t sh = { .version=PROTOCOL_VERSION, .type=MSG_SNAPSHOT, .length=(uint16_t)sizeof(snap), .seq=tick+1, .tick=tick };
-        if (send_frame(cfd, &sh, &snap, (uint16_t)sizeof(snap)) < 0) {
-            perror("send SNAPSHOT");
-            break;
+        // Update and broadcast snapshot
+        game_update(&game);
+        game_snapshot_t snap; game_build_snapshot(&game, &snap);
+        msg_header_t sh = { .version=PROTOCOL_VERSION, .type=MSG_SNAPSHOT, .length=(uint16_t)sizeof(snap), .seq=game.tick, .tick=game.tick };
+        for (int i = 0; i < MAX_CLIENTS; ++i) {
+            if (clients[i] >= 0) {
+                if (send_frame(clients[i], &sh, &snap, (uint16_t)sizeof(snap)) < 0) {
+                    printf("[server] send error -> disconnect player %u\n", pids[i]);
+                    game_remove_player(&game, pids[i]);
+                    close(clients[i]); clients[i] = -1; pids[i] = 0;
+                }
+            }
         }
-        printf("[server] SNAPSHOT tick=%u sent (x=%d,y=%d)\n", tick, snap.players[0].ent.box.x, snap.players[0].ent.box.y);
-    struct timespec ts; ts.tv_sec = 0; ts.tv_nsec = 200000000; // 200ms
-    nanosleep(&ts, NULL); // 5 Hz
     }
-    printf("[server] closing connection with player %u\n", player_id);
-    close(cfd);
 }
+ 
 
 int main(void) {
     int lfd = listen_tcp(SERVER_PORT);
-    // assicura flush riga-per-riga in console
     setvbuf(stdout, NULL, _IOLBF, 0);
     printf("Server listening on :%d\n", SERVER_PORT);
-    uint32_t next_id = 1;
-    for (;;) {
-        int cfd = accept(lfd, NULL, NULL);
-        if (cfd < 0) continue;
-        uint32_t pid = next_id++;
-        printf("[server] client connected (fd=%d) -> player %u\n", cfd, pid);
-        // Nota: per semplicità gestiamo un client alla volta; in seguito useremo thread o poll/epoll
-        handle_client(cfd, pid);
-    }
+    serve_loop(lfd);
     return 0;
 }
