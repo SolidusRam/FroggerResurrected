@@ -27,3 +27,14 @@ FroggerResurrected/ <br>
 ├── assets/ # Eventuali risorse grafiche o audio <br>
 ├── Makefile # File per automatizzare la compilazione <br>
 └── README.md # Documentazione del progetto<br>
+
+
+ESPANSIONE MULTIPLAYER
+- Shared: estrai state e costanti dal singleplayer in un modulo senza ncurses.
+- Server: loop headless che gira e stampa snapshot su stdout (per debug).
+- Client: riceve snapshot e renderizza (niente input all’inizio → spettatore).
+- Input: invia intenti e controlla un player sul server.
+- Secondo client: gestisci 2 player.
+- Interpolazione leggera e heartbeat.
+- Pulizia: riconnessione, game over, scoreboard.
+- Semplice stampa di gara fra i 2 giocatori
