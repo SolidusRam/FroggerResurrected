@@ -1,4 +1,6 @@
 #include "../include/game.h"
+#include "../include/scoreboard.h"
+#include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
@@ -66,6 +68,15 @@ void game_init(server_game_t* g) {
     // Timer
     g->timer.max_time = 30;
     g->timer.remaining_time = 30;
+
+    scoreboard_entry_t top[5];
+    int n = scoreboard_get_top(top, 5);
+    if (n > 0) {
+        printf("[server] classifica attuale (top %d):\n", n);
+        for (int i = 0; i < n; ++i) {
+            printf("[server]   #%d player %u -> %d punti\n", i + 1, top[i].player_id, top[i].score);
+        }
+    }
 }
 
 int game_add_player(server_game_t* g, uint32_t player_id) {
@@ -90,6 +101,7 @@ int game_add_player(server_game_t* g, uint32_t player_id) {
 void game_remove_player(server_game_t* g, uint32_t player_id) {
     int idx = find_player_index(g, player_id);
     if (idx < 0) return;
+    scoreboard_record(player_id, g->players[idx].score);
     for (int j = idx; j < g->num_players - 1; ++j) g->players[j] = g->players[j+1];
     g->num_players--;
     // collapse attachment arrays similarly

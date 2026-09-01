@@ -5,7 +5,7 @@ NCURSES_LIBS=-lncurses
 
 SHARED_OBJS=shared/src/protocol.o
 
-SERVER_OBJS=server/src/main.o server/src/game.o
+SERVER_OBJS=server/src/main.o server/src/game.o server/src/scoreboard.o
 CLIENT_OBJS=client/src/main.o client/src/ui.o
 
 all: server client
