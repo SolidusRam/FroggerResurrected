@@ -9,7 +9,7 @@
 // Allineati alla versione singleplayer/ver_thread/include/game.h
 enum { GAME_WIDTH = 80, GAME_HEIGHT = 24 };
 enum { FLOOR_HEIGHT = 20, LANE_HEIGHT = 2 };
-enum { MAX_PLAYERS = 2, MAX_CROCODILES = 16, MAX_BULLETS = 100 };
+enum { MAX_PLAYERS = 4, MAX_CROCODILES = 16, MAX_BULLETS = 100 };
 enum { NUM_TANE = 5, TANA_WIDTH = 7, TANA_HEIGHT = 1 };
 
 typedef enum { DIR_NONE=0, DIR_LEFT=-1, DIR_RIGHT=1, DIR_UP=2, DIR_DOWN=3 } direction_t;

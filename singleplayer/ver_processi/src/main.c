@@ -6,13 +6,38 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "../include/game.h"
 #include "../include/player.h"
 #include "../include/crocodile.h"
 #include "../include/utils.h"
 
+// Tracciati qui perché il loop di gioco è bloccato in read() sulla pipe:
+// l'unico modo per garantire la pulizia (terminale ncurses + processi figli)
+// su Ctrl+C/SIGTERM è farla direttamente nel signal handler, non con un flag
+// controllato dal loop principale.
+static pid_t g_pid_rana = 0;
+static pid_t g_pid_coccodrilli[MAX_CROCODILES];
+static int g_num_coccodrilli = 0;
+
+static void handle_termination_signal(int sig) {
+    (void)sig;
+    for (int i = 0; i < g_num_coccodrilli; i++) {
+        if (g_pid_coccodrilli[i] > 0) kill(g_pid_coccodrilli[i], SIGTERM);
+    }
+    if (g_pid_rana > 0) kill(g_pid_rana, SIGTERM);
+    endwin();
+    _exit(1);
+}
+
 int main(){
+    struct sigaction sa = {0};
+    sa.sa_handler = handle_termination_signal;
+    sigemptyset(&sa.sa_mask);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGTERM, &sa, NULL);
+
 
     //creo la pipe
 
@@ -83,6 +108,7 @@ int main(){
         perror("Errore nella creazione del processo rana!\n");
         _exit(1);
     }
+    g_pid_rana = pid_rana;
 
     for(int i =0; i<num_coccodrilli; i++){
         if((pid_coccodrilli[i] = fork()) == 0){
@@ -95,6 +121,8 @@ int main(){
             _exit(1);
         }
     }
+    g_num_coccodrilli = num_coccodrilli;
+    memcpy(g_pid_coccodrilli, pid_coccodrilli, sizeof(pid_coccodrilli[0]) * (size_t)num_coccodrilli);
 
     close(pipefd[1]);          // Chiude scrittura pipe principale
     close(pipeToFrog[0]);      // Chiude lettura pipe rana   
@@ -111,20 +139,12 @@ int main(){
             mvprintw(LINES/2, COLS/2-15, "Riavvio del gioco in corso...");
             refresh();
             
-            // Termina i processi esistenti
-            printf("DEBUG: Game restart, killing existing processes\n");
-            fflush(stdout);
-            
             // Termina i processi dei coccodrilli
             for(int i = 0; i < num_coccodrilli; i++) {
-                printf("DEBUG: Sending SIGTERM to crocodile %d (PID: %d)\n", i, pid_coccodrilli[i]);
-                fflush(stdout);
                 kill(pid_coccodrilli[i], SIGTERM);
             }
-            
+
             // Termina il processo della rana
-            printf("DEBUG: Sending SIGTERM to frog (PID: %d)\n", pid_rana);
-            fflush(stdout);
             kill(pid_rana, SIGTERM);
             
             // Attendi la terminazione dei processi
@@ -160,7 +180,8 @@ int main(){
                 perror("Errore nella creazione del processo rana!\n");
                 _exit(1);
             }
-            
+            g_pid_rana = pid_rana;
+
             // Ricrea i processi dei coccodrilli
             for(int i = 0; i < num_coccodrilli; i++){
                 if((pid_coccodrilli[i] = fork()) == 0){
@@ -173,7 +194,8 @@ int main(){
                     _exit(1);
                 }
             }
-            
+            memcpy(g_pid_coccodrilli, pid_coccodrilli, sizeof(pid_coccodrilli[0]) * (size_t)num_coccodrilli);
+
             // Chiudi le estremità delle pipe non utilizzate nel processo principale
             close(pipefd[1]);          // Chiude scrittura pipe principale
             close(pipeToFrog[0]);      // Chiude lettura pipe rana   
@@ -208,45 +230,26 @@ int main(){
         }
     } while (play_again);
 
-    printf("DEBUG: Game ended, starting cleanup\n");
-    fflush(stdout);
-
-    // Kill they processi coccodrilli
+    // Kill dei processi coccodrilli
     for(int i = 0; i < num_coccodrilli; i++) {
-        printf("DEBUG: Sending SIGTERM to crocodile %d (PID: %d)\n", i, pid_coccodrilli[i]);
-        fflush(stdout);
         kill(pid_coccodrilli[i], SIGTERM);
     }
-    
-    printf("DEBUG: Sending SIGTERM to frog (PID: %d)\n", pid_rana);
-    fflush(stdout);
     kill(pid_rana, SIGTERM);
 
     // Attende la terminazione dei processi
     for(int i = 0; i < num_coccodrilli; i++) {
-        printf("DEBUG: Waiting for crocodile %d to terminate\n", i);
-        fflush(stdout);
         waitpid(pid_coccodrilli[i], NULL, 0);
     }
-    
-    printf("DEBUG: Waiting for frog to terminate\n");
-    fflush(stdout);
     waitpid(pid_rana, NULL, 0);
 
-    printf("DEBUG: Closing pipes\n");
-    fflush(stdout);
-    
-    // Chuide le pipe rimanenti
+    // Chiude le pipe rimanenti
     close(pipefd[0]);
     close(pipefd[1]);
     close(pipeToFrog[0]);
     close(pipeToFrog[1]);
     close(pausePipe[0]);
     close(pausePipe[1]);
-    
-    printf("DEBUG: Cleanup complete, ending game\n");
-    fflush(stdout);
-        
+
     endwin();
     return 0;
 }

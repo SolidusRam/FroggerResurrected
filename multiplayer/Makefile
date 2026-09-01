@@ -11,7 +11,7 @@ CLIENT_OBJS=client/src/main.o client/src/ui.o
 all: server client
 
 server: $(SHARED_OBJS) $(SERVER_OBJS)
-	$(CC) $(CFLAGS) -o server_bin $^ $(LDFLAGS)
+	$(CC) $(CFLAGS) -o server_bin $^ $(LDFLAGS) -lpthread
 
 client: $(SHARED_OBJS) $(CLIENT_OBJS)
 	$(CC) $(CFLAGS) -o client_bin $^ $(LDFLAGS) $(NCURSES_LIBS)
